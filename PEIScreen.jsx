@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 
 /* COMPONENTE: TELA 5 — PEI (Plano Educacional Individualizado) */
 export default function PEIScreen({ sessionInfo, onFinalize, onBack, isReadOnly }) {
@@ -31,6 +31,45 @@ export default function PEIScreen({ sessionInfo, onFinalize, onBack, isReadOnly 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [errors, setErrors] = useState({});
 
+  // ✅ EXTRAIR DADOS COM FALLBACK SEGURO
+  const dadosConsolidados = useMemo(() => {
+    // Calcular percentuais a partir dos scores se não existir
+    let percentuais = sessionInfo?.percentuais?.geral || null;
+
+    if (!percentuais && sessionInfo?.scores_snapshot) {
+      const scores = sessionInfo.scores_snapshot;
+      const total = Object.keys(scores).length || 1;
+      const dominados = Object.values(scores).filter(s => s === 'dominado').length;
+      const emergentes = Object.values(scores).filter(s => s === 'emergente').length;
+      const naoObs = Object.values(scores).filter(s => s === 'nao_observado').length;
+
+      percentuais = {
+        dominado: (dominados / total) * 100,
+        emergente: (emergentes / total) * 100,
+        nao_observado: (naoObs / total) * 100
+      };
+    }
+
+    // Fallback final
+    if (!percentuais) {
+      percentuais = { dominado: 0, emergente: 0, nao_observado: 0 };
+    }
+
+    return {
+      percentuais,
+      escoreBarreiras: sessionInfo?.escore_total_barreiras || 0,
+      escoreTransicao: sessionInfo?.transicao?.escore_total || 0,
+      lacunas: sessionInfo?.lacunas || []
+    };
+  }, [sessionInfo]);
+
+  // ✅ HELPER PARA FORMATAR NÚMERO SEGURO
+  const formatNumber = (value, decimals = 1) => {
+    const num = Number(value);
+    if (isNaN(num)) return '0';
+    return num.toFixed(decimals);
+  };
+
   // Adicionar nova área
   const adicionarArea = () => {
     setAreas([...areas, {
@@ -50,7 +89,7 @@ export default function PEIScreen({ sessionInfo, onFinalize, onBack, isReadOnly 
       alert('É necessário ter pelo menos uma área no PEI.');
       return;
     }
-    if (confirm('Deseja realmente remover esta área?')) {
+    if (window.confirm('Deseja realmente remover esta área?')) {
       setAreas(areas.filter(a => a.area_id !== areaId));
     }
   };
@@ -213,7 +252,7 @@ export default function PEIScreen({ sessionInfo, onFinalize, onBack, isReadOnly 
           <h1>TELA 5 — PEI</h1>
           <p>Plano Educacional Individualizado</p>
           <div className="session-info">
-            <strong>{sessionInfo.child_name}</strong>
+            <strong>{sessionInfo?.child_name || 'Criança'}</strong>
           </div>
         </div>
         {onBack && (
@@ -229,19 +268,19 @@ export default function PEIScreen({ sessionInfo, onFinalize, onBack, isReadOnly 
         <div className="info-grid">
           <div className="info-item">
             <span className="info-label">Milestones Dominados:</span>
-            <span className="info-value">{sessionInfo.percentuais?.geral?.dominado?.toFixed(1) || 0}%</span>
+            <span className="info-value">{formatNumber(dadosConsolidados.percentuais.dominado)}%</span>
           </div>
           <div className="info-item">
             <span className="info-label">Lacunas Identificadas:</span>
-            <span className="info-value">{sessionInfo.lacunas?.length || 0}</span>
+            <span className="info-value">{dadosConsolidados.lacunas.length}</span>
           </div>
           <div className="info-item">
             <span className="info-label">Escore de Barreiras:</span>
-            <span className="info-value">{sessionInfo.escore_total_barreiras || 0} / 40</span>
+            <span className="info-value">{dadosConsolidados.escoreBarreiras} / 40</span>
           </div>
           <div className="info-item">
             <span className="info-label">Escore de Transição:</span>
-            <span className="info-value">{sessionInfo.transicao?.escore_total || 0}</span>
+            <span className="info-value">{dadosConsolidados.escoreTransicao}</span>
           </div>
         </div>
       </section>
@@ -409,7 +448,7 @@ export default function PEIScreen({ sessionInfo, onFinalize, onBack, isReadOnly 
             className="btn btn-finalize"
             onClick={tentarFinalizar}
           >
-            ✓ Finalizar PEI
+            ✓ Finalizar PEI e Encerrar Avaliação
           </button>
         )}
         {isReadOnly && (
@@ -421,16 +460,21 @@ export default function PEIScreen({ sessionInfo, onFinalize, onBack, isReadOnly 
       {showConfirmModal && (
         <div className="modal-overlay" onClick={() => setShowConfirmModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>Confirmar Finalização do PEI</h3>
+            <h3>🎉 Confirmar Finalização do PEI</h3>
             <p>Você revisou todas as informações do Plano Educacional Individualizado?</p>
-            <p><strong>Total de áreas:</strong> {areas.length}</p>
-            <p><strong>Total de metas:</strong> {areas.reduce((sum, a) => sum + a.metas.length, 0)}</p>
+            <div className="modal-summary">
+              <p><strong>Total de áreas:</strong> {areas.length}</p>
+              <p><strong>Total de metas:</strong> {areas.reduce((sum, a) => sum + a.metas.length, 0)}</p>
+            </div>
+            <p className="modal-warning">
+              ⚠️ Após finalizar, a sessão será encerrada e ficará em modo somente leitura.
+            </p>
             <div className="modal-actions">
               <button className="btn btn-secondary" onClick={() => setShowConfirmModal(false)}>
                 Cancelar
               </button>
               <button className="btn btn-primary" onClick={confirmarFinalizar}>
-                Confirmar e Finalizar
+                ✓ Confirmar e Finalizar
               </button>
             </div>
           </div>
@@ -583,6 +627,7 @@ function getPEIStyles() {
       font-size: 0.95rem;
       font-family: inherit;
       transition: border-color 0.2s;
+      box-sizing: border-box;
     }
 
     .form-input:focus {
@@ -604,6 +649,7 @@ function getPEIStyles() {
       resize: vertical;
       min-height: 80px;
       transition: border-color 0.2s;
+      box-sizing: border-box;
     }
 
     .form-textarea:focus {
@@ -789,6 +835,26 @@ function getPEIStyles() {
       margin-bottom: 0.5rem;
     }
 
+    .modal-summary {
+      background: #f0fdf4;
+      padding: 1rem;
+      border-radius: 8px;
+      margin: 1rem 0;
+    }
+
+    .modal-summary p {
+      margin: 0.25rem 0;
+      color: #166534;
+    }
+
+    .modal-warning {
+      background: #fef3c7;
+      padding: 0.75rem;
+      border-radius: 6px;
+      color: #92400e !important;
+      font-size: 0.9rem;
+    }
+
     .modal-actions {
       display: flex;
       gap: 1rem;
@@ -816,23 +882,23 @@ function getPEIStyles() {
       background: #059669;
     }
 
-      @media (max-width: 768px) {
-        .info-row {
-          grid-template-columns: 1fr;
-        }
-
-        .meta-row {
-          flex-direction: column;
-        }
+    @media (max-width: 768px) {
+      .info-row {
+        grid-template-columns: 1fr;
       }
 
-      .read-only-badge {
-        background: #ecfdf5;
-        color: #059669;
-        padding: 0.75rem 3rem;
-        border-radius: 8px;
-        font-weight: 800;
-        border: 2px solid #6ee7b7;
+      .meta-row {
+        flex-direction: column;
       }
-    `;
+    }
+
+    .read-only-badge {
+      background: #ecfdf5;
+      color: #059669;
+      padding: 0.75rem 3rem;
+      border-radius: 8px;
+      font-weight: 800;
+      border: 2px solid #6ee7b7;
+    }
+  `;
 }

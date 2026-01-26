@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import MilestonesScreen from './MilestonesScreen';
+import EcoicoSubtestScreen from './EcoicoSubtestScreen';
 import SubtestesScreen from './SubtestesScreen';
 import BarreirasScreen from './BarreirasScreen';
 import TransicaoScreen from './TransicaoScreen';
@@ -51,19 +52,28 @@ export default function SessionController({
     setSearch = () => { }
 }) {
 
+    // ✅ HELPER: Verifica se tem lacuna no domínio Ecoico
+    function hasEcoicoLacuna(session) {
+        if (!session?.lacunas) return false;
+        const ecoicoDomains = ['DOM04', 'DOM07'];
+        return session.lacunas.some(l => ecoicoDomains.includes(l.domain_id));
+    }
+
     // DEBUG: Monitorar mudanças no estado
     useEffect(() => {
-        console.log("🎮 SessionController - Estado:", {
+        console.log("🎮 SessionController - Estado COMPLETO:", {
             viewMode,
             selectedSessionId: selectedSession?.session_id,
             selectedSessionFlags: selectedSession ? {
                 milestones_completo: selectedSession.milestones_completo,
+                ecoico_completo: selectedSession.ecoico_completo,
                 tarefas_completas: selectedSession.tarefas_completas,
-                barreiras_completas: selectedSession.barreiras_completas,
+                barreiras_completas: selectedSession.barreiras_completas,  // ⬅️ VERIFICAR ESTE
                 transicao_completa: selectedSession.transicao_completa,
                 pei_completo: selectedSession.pei_completo,
                 sessao_fechada: selectedSession.sessao_fechada,
-                lacunasCount: selectedSession.lacunas?.length || 0
+                lacunasCount: selectedSession.lacunas?.length || 0,
+                escoreBarreiras: selectedSession.escore_total_barreiras || 'NÃO DEFINIDO'
             } : null,
             sessionsCount: sessions.length
         });
@@ -110,6 +120,7 @@ export default function SessionController({
                                         {Object.keys(session.scores_snapshot || {}).length} marcos avaliados
                                     </span>
                                     {session.ai_report && <span className="ai-badge">🤖 IA</span>}
+                                    {session.ecoico_results && <span className="ai-badge">🔊 Ecoico</span>}
                                 </div>
 
                                 <div className="session-progress-badges">
@@ -119,6 +130,14 @@ export default function SessionController({
                                     >
                                         M
                                     </span>
+                                    {hasEcoicoLacuna(session) && (
+                                        <span
+                                            title="Ecoico"
+                                            className={`badge ${session.ecoico_completo ? 'completed' : 'pending'}`}
+                                        >
+                                            E
+                                        </span>
+                                    )}
                                     <span
                                         title="Subtestes"
                                         className={`badge ${session.tarefas_completas ? 'completed' : 'pending'}`}
@@ -285,6 +304,14 @@ export default function SessionController({
     // 3. FLUXO DE AVALIAÇÃO SEQUENCIAL (A LÓGICA MESTRE)
     if (viewMode === 'evaluation' && selectedSession) {
         console.log("🎯 Modo avaliação ativo para sessão:", selectedSession.session_id);
+        console.log("📋 FLAGS DA SESSÃO:", {
+            milestones_completo: selectedSession.milestones_completo,
+            ecoico_completo: selectedSession.ecoico_completo,
+            tarefas_completas: selectedSession.tarefas_completas,
+            barreiras_completas: selectedSession.barreiras_completas,
+            transicao_completa: selectedSession.transicao_completa,
+            pei_completo: selectedSession.pei_completo
+        });
 
         const isReadOnly = !!selectedSession.sessao_fechada;
 
@@ -296,19 +323,13 @@ export default function SessionController({
 
         // TELA 1: Milestones
         if (!selectedSession.milestones_completo) {
-            console.log("📊 Indo para MilestonesScreen, sessão:", {
-                id: selectedSession.session_id,
-                child_name: selectedSession.child_name,
-                scoresCount: Object.keys(selectedSession.scores_snapshot || {}).length
-            });
-
+            console.log("📊 DECISÃO: Indo para MilestonesScreen (milestones_completo = false)");
             return (
                 <MilestonesScreen
                     data={data}
-                    sessionInfo={selectedSession}  // ✅ Passando a sessão correta
+                    sessionInfo={selectedSession}
                     onFinalize={(payload) => {
                         console.log("✅ MilestonesScreen finalizando:", payload);
-                        // Garante que milestones_completo seja true
                         onUpdateSession({
                             ...payload,
                             milestones_completo: true
@@ -319,14 +340,39 @@ export default function SessionController({
                         setViewMode('sessions');
                     }}
                     isReadOnly={isReadOnly}
-                    key={selectedSession.session_id} // ✅ FORÇA RE-RENDER AO MUDAR SESSÃO
+                    key={selectedSession.session_id}
+                />
+            );
+        }
+
+        // TELA 1.5: Subteste Ecoico (CONDICIONAL)
+        const needsEcoico = hasEcoicoLacuna(selectedSession);
+        if (needsEcoico && !selectedSession.ecoico_completo) {
+            console.log("🔊 DECISÃO: Indo para EcoicoSubtestScreen (lacuna detectada, ecoico_completo = false)");
+            return (
+                <EcoicoSubtestScreen
+                    sessionInfo={selectedSession}
+                    onFinalize={(payload) => {
+                        console.log("✅ EcoicoSubtestScreen finalizado:", payload);
+                        onUpdateSession({
+                            ecoico_results: payload.ecoico_results,
+                            ecoico_summary: payload.summary,
+                            ecoico_completo: true
+                        });
+                    }}
+                    onBack={() => {
+                        if (window.confirm("Deseja pular o Subteste Ecoico? Você pode aplicá-lo depois.")) {
+                            onUpdateSession({ ecoico_completo: true, ecoico_skipped: true });
+                        }
+                    }}
+                    isReadOnly={isReadOnly}
                 />
             );
         }
 
         // TELA 2: Subtestes (Tarefas)
         if (!selectedSession.tarefas_completas) {
-            console.log("🧪 Indo para SubtestesScreen com lacunas:", selectedSession.lacunas?.length || 0);
+            console.log("🧪 DECISÃO: Indo para SubtestesScreen (tarefas_completas = false)");
             return (
                 <SubtestesScreen
                     lacunas={selectedSession.lacunas || []}
@@ -346,16 +392,23 @@ export default function SessionController({
 
         // TELA 3: Barreiras
         if (!selectedSession.barreiras_completas) {
-            console.log("🚧 Indo para BarreirasScreen");
+            console.log("🚧 DECISÃO: Indo para BarreirasScreen (barreiras_completas = false)");
             return (
                 <BarreirasScreen
                     sessionInfo={selectedSession}
                     onFinalize={(payload) => {
-                        console.log("✅ BarreirasScreen finalizada, payload:", payload);
-                        onUpdateSession({
+                        console.log("✅ BarreirasScreen finalizada!");
+                        console.log("📦 Payload recebido:", payload);
+                        console.log("🔑 barreiras_completas no payload:", payload.barreiras_completas);
+
+                        // Chamar onUpdateSession e logar
+                        const updateData = {
                             ...payload,
-                            barreiras_completas: true
-                        });
+                            barreiras_completas: true  // Garantir que está true
+                        };
+                        console.log("📤 Enviando para onUpdateSession:", updateData);
+
+                        onUpdateSession(updateData);
                     }}
                     onBack={onBackToList}
                     isReadOnly={isReadOnly}
@@ -365,7 +418,13 @@ export default function SessionController({
 
         // TELA 4: Transição
         if (!selectedSession.transicao_completa) {
-            console.log("🔄 Indo para TransicaoScreen");
+            console.log("🔄 DECISÃO: Indo para TransicaoScreen (transicao_completa = false)");
+            console.log("📊 Dados disponíveis para Transição:", {
+                percentuais: selectedSession.percentuais,
+                escore_total_barreiras: selectedSession.escore_total_barreiras,
+                lacunas: selectedSession.lacunas?.length
+            });
+
             return (
                 <TransicaoScreen
                     sessionInfo={selectedSession}
@@ -383,7 +442,7 @@ export default function SessionController({
         }
 
         // TELA 5: PEI
-        console.log("📝 Indo para PEIScreen");
+        console.log("📝 DECISÃO: Indo para PEIScreen (todas as etapas anteriores completas)");
         return (
             <PEIScreen
                 sessionInfo={selectedSession}
@@ -434,7 +493,9 @@ export default function SessionController({
                             session={{
                                 date: selectedSession.date,
                                 scores: selectedSession.scores_snapshot,
-                                lacunas: selectedSession.lacunas
+                                lacunas: selectedSession.lacunas,
+                                ecoico_results: selectedSession.ecoico_results,
+                                ecoico_summary: selectedSession.ecoico_summary
                             }}
                             domains={data.domains || []}
                             includeGraphs={includeGraphs}
@@ -451,6 +512,9 @@ export default function SessionController({
                                 <p><strong>Data:</strong> {new Date(selectedSession.date).toLocaleDateString('pt-BR')}</p>
                                 <p><strong>Marcos avaliados:</strong> {Object.keys(selectedSession.scores_snapshot || {}).length}</p>
                                 <p><strong>Lacunas identificadas:</strong> {selectedSession.lacunas?.length || 0}</p>
+                                {selectedSession.ecoico_summary && (
+                                    <p><strong>Ecoico:</strong> {selectedSession.ecoico_summary.text}</p>
+                                )}
                             </div>
 
                             {selectedSession.milestones_completo && (
@@ -458,6 +522,9 @@ export default function SessionController({
                                     <h3>Progresso da Avaliação</h3>
                                     <div className="progress-badges">
                                         <span className={`badge ${selectedSession.milestones_completo ? 'completed' : ''}`}>Milestones ✓</span>
+                                        {hasEcoicoLacuna(selectedSession) && (
+                                            <span className={`badge ${selectedSession.ecoico_completo ? 'completed' : ''}`}>Ecoico ✓</span>
+                                        )}
                                         <span className={`badge ${selectedSession.tarefas_completas ? 'completed' : ''}`}>Subtestes ✓</span>
                                         <span className={`badge ${selectedSession.barreiras_completas ? 'completed' : ''}`}>Barreiras ✓</span>
                                         <span className={`badge ${selectedSession.transicao_completa ? 'completed' : ''}`}>Transição ✓</span>
@@ -488,7 +555,7 @@ export default function SessionController({
         );
     }
 
-    // 6. VIEW PADRÃO (caso nenhuma condição seja atendida)
+    // 6. VIEW PADRÃO
     return (
         <div className="default-view">
             <h1>PsicoTestes VB-MAPP</h1>
@@ -558,6 +625,9 @@ function ConsolidadoFinalView({ session, onBack }) {
                 <p><strong>Data:</strong> {new Date(session.date).toLocaleDateString('pt-BR')}</p>
                 <p><strong>Marcos avaliados:</strong> {Object.keys(session.scores_snapshot || {}).length}</p>
                 <p><strong>Lacunas identificadas:</strong> {session.lacunas?.length || 0}</p>
+                {session.ecoico_summary && (
+                    <p><strong>Ecoico:</strong> {session.ecoico_summary.text}</p>
+                )}
             </div>
 
             <button className="btn-exit" onClick={onBack}>

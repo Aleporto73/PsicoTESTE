@@ -1,28 +1,17 @@
 // ecoicoSubtest.js
 // Subteste Ecoico — VB-MAPP
-// v1.2 | Condicional | Funcional | Alinhado à planilha | Copyright-safe
+// v1.2 | Lógica Pura | Independente de React
 
 /* =========================================================
-   META / INSTITUCIONAL
+   META / ESTRUTURA
 ========================================================= */
 
 export const ECOICO_META = {
     subtest_id: "ecoico_v1_2",
     name: "Subteste Ecoico",
-    description:
-        "Avaliação funcional de repetição verbal (ecoico), aplicada apenas quando há lacuna identificada nos Milestones.",
-    schema_version: "ecoico_v1_2",
-    affects_milestones_score: false,
-    nature: "aprofundamento_funcional"
+    description: "Avaliação complementar de repetição verbal (ecoico).",
+    schema_version: "ecoico_v1_2"
 };
-
-export const ECOICO_UI_DISCLAIMER =
-    "As sugestões por idade servem apenas como orientação inicial. " +
-    "A classificação final é baseada exclusivamente no desempenho funcional observado.";
-
-/* =========================================================
-   ESTRUTURA DO SUBTESTE (ABSTRATA, SEM ITENS PROTEGIDOS)
-========================================================= */
 
 export const ECOICO_STRUCTURE = {
     groups: [
@@ -31,188 +20,86 @@ export const ECOICO_STRUCTURE = {
             label: "Sílabas simples",
             pattern: "V / CV / reduplicação",
             min_trials: 10,
-            reference_threshold: 0.8,
-            interpretation: "Consistência funcional em sílabas simples"
+            reference_threshold: 0.8
         },
         {
             group_id: 2,
             label: "Palavras dissílabas",
             pattern: "CVCV / CV.CV",
             min_trials: 10,
-            reference_threshold: 0.7,
-            interpretation: "Repetição funcional de palavras simples"
+            reference_threshold: 0.7
         },
         {
             group_id: 3,
             label: "Palavras trissílabas",
             pattern: "CVCVCV",
             min_trials: 10,
-            reference_threshold: 0.7,
-            interpretation: "Expansão do repertório ecoico"
+            reference_threshold: 0.7
         },
         {
             group_id: 4,
             label: "Frases curtas",
             pattern: "2–3 palavras",
             min_trials: 8,
-            reference_threshold: 0.6,
-            interpretation: "Ecoico funcional em cadeias verbais curtas"
+            reference_threshold: 0.6
         },
         {
             group_id: 5,
             label: "Prosódia",
             pattern: "ritmo / entonação / ênfase",
-            qualitative_only: true,
-            interpretation: "Análise qualitativa da prosódia"
+            qualitative_only: true
         }
     ]
 };
 
 /* =========================================================
-   IDADE → ORIENTAÇÃO DE UI (NÃO DECIDE RESULTADO)
+   PONTUAÇÃO → NÍVEL (baseado na planilha)
 ========================================================= */
 
-export function getEcoicoPriorityByAge(ageMonths) {
-    if (ageMonths == null) return null;
+export const ECOICO_SCORE_TO_LEVEL = {
+    // Nível 1: 0-18 meses
+    level1: [
+        { min: 2, max: 4, milestone: "1M" },
+        { min: 5, max: 9, milestone: "2M" },
+        { min: 10, max: 14, milestone: "3M" },
+        { min: 15, max: 24, milestone: "4M" },
+        { min: 25, max: 49, milestone: "5M" },
+    ],
+    // Nível 2: 18-30 meses
+    level2: [
+        { min: 50, max: 59, milestone: "6M" },
+        { min: 60, max: 69, milestone: "7M" },
+        { min: 70, max: 79, milestone: "8M" },
+        { min: 80, max: 89, milestone: "9M" },
+        { min: 90, max: Infinity, milestone: "10M" },
+    ]
+};
 
-    if (ageMonths <= 18) {
-        return {
-            expected_groups: [1],
-            emerging_groups: [2],
-            note: "Expectativa funcional típica até sílabas simples"
-        };
+/* =========================================================
+   SESSÃO E INTERPRETAÇÃO
+========================================================= */
+
+export function initEcoicoState(sessionInfo = {}) {
+    // Se já existe no sessionInfo, restaura. Senão, cria novo.
+    if (sessionInfo.ecoico_results) {
+        return sessionInfo.ecoico_results;
     }
 
-    if (ageMonths <= 30) {
-        return {
-            expected_groups: [2],
-            emerging_groups: [1, 3],
-            note: "Expansão para palavras dissílabas"
-        };
-    }
-
-    if (ageMonths <= 48) {
-        return {
-            expected_groups: [3, 4],
-            emerging_groups: [2, 5],
-            note: "Ecoico funcional em palavras e frases curtas"
-        };
-    }
-
-    return {
-        expected_groups: [3, 4],
-        emerging_groups: [5],
-        note: "Avaliação funcional independente da idade cronológica"
-    };
+    return ECOICO_STRUCTURE.groups.map(g => ({
+        group_id: g.group_id,
+        attempts: 0,
+        correct: 0,
+        completed: false,
+        passed: false,
+        notes: "",
+        attempt_log: []
+    }));
 }
 
-/* =========================================================
-   SESSÃO
-========================================================= */
-
-export function initEcoicoSession(sessionInfo = {}) {
-    const ageMonths = sessionInfo.age_months ?? null;
-    const uiPriority =
-        ageMonths != null ? getEcoicoPriorityByAge(ageMonths) : null;
-
-    return {
-        ...ECOICO_META,
-        session_id: sessionInfo.session_id,
-        child_name: sessionInfo.child_name,
-        age_months: ageMonths,
-        ui_priority: uiPriority,
-        triggered_by: "milestone_lacuna",
-        started_at: new Date().toISOString(),
-        results: ECOICO_STRUCTURE.groups.map(g => ({
-            group_id: g.group_id,
-            attempts: 0,
-            correct: 0,
-            completed: false,
-            passed: false,
-            notes: ""
-        })),
-        finished_at: null
-    };
-}
-
-/* =========================================================
-   REGISTRO DE TENTATIVAS
-========================================================= */
-
-export function recordEcoicoAttempt(state, groupId, isCorrect) {
-    return {
-        ...state,
-        results: state.results.map(r =>
-            r.group_id === groupId && !r.completed
-                ? {
-                    ...r,
-                    attempts: r.attempts + 1,
-                    correct: isCorrect ? r.correct + 1 : r.correct
-                }
-                : r
-        )
-    };
-}
-
-/* =========================================================
-   FINALIZAÇÃO DE GRUPO (CRITÉRIO FUNCIONAL)
-========================================================= */
-
-export function finalizeEcoicoGroup(state, groupId, notes = "") {
-    const def = ECOICO_STRUCTURE.groups.find(g => g.group_id === groupId);
-
-    return {
-        ...state,
-        results: state.results.map(r => {
-            if (r.group_id !== groupId) return r;
-
-            let passed = false;
-
-            if (!def.qualitative_only) {
-                const rate = r.attempts > 0 ? r.correct / r.attempts : 0;
-                passed =
-                    r.attempts >= def.min_trials &&
-                    rate >= def.reference_threshold;
-            }
-
-            return {
-                ...r,
-                completed: true,
-                passed,
-                notes
-            };
-        })
-    };
-}
-
-/* =========================================================
-   DECISÃO QUALITATIVA (PROSÓDIA)
-========================================================= */
-
-export function setQualitativeDecision(state, groupId, passed, notes = "") {
-    return {
-        ...state,
-        results: state.results.map(r =>
-            r.group_id === groupId
-                ? {
-                    ...r,
-                    completed: true,
-                    passed: !!passed,
-                    notes
-                }
-                : r
-        )
-    };
-}
-
-/* =========================================================
-   FINALIZAÇÃO DA SESSÃO / LEITURA CLÍNICA
-========================================================= */
-
-export function finalizeEcoicoSession(state) {
+export function getInterpretation(results) {
     const highestPassed = Math.max(
         0,
-        ...state.results.filter(r => r.passed).map(r => r.group_id)
+        ...results.filter(r => r.passed).map(r => r.group_id)
     );
 
     const interpretationMap = {
@@ -224,27 +111,68 @@ export function finalizeEcoicoSession(state) {
         5: "Ecoico funcional com controle prosódico"
     };
 
-    return {
-        ...state,
-        finished_at: new Date().toISOString(),
-        summary: {
-            highest_group_passed: highestPassed,
-            interpretation: interpretationMap[highestPassed],
-            clinical_flag:
-                highestPassed <= 2 ? "ecoico_limitado" : "ecoico_funcional",
-            recommendation:
-                highestPassed <= 2
-                    ? "Iniciar intervenção ecoica a partir do próximo nível acima do alcançado."
-                    : "Manter estímulos ecoicos em contexto funcional e expandir repertório verbal."
+    // Calcular pontuação total
+    const totalScore = results.reduce((sum, r) => sum + r.correct, 0);
+
+    // Determinar milestone baseado na pontuação
+    let milestone = null;
+    for (const level of [...ECOICO_SCORE_TO_LEVEL.level1, ...ECOICO_SCORE_TO_LEVEL.level2]) {
+        if (totalScore >= level.min && totalScore <= level.max) {
+            milestone = level.milestone;
+            break;
         }
+    }
+
+    return {
+        score: highestPassed,
+        total_points: totalScore,
+        milestone: milestone,
+        text: interpretationMap[highestPassed],
+        flag: highestPassed <= 2 ? "ecoico_limitado" : "ecoico_funcional",
+        recommendation: highestPassed <= 2
+            ? "Iniciar intervenção ecoica a partir do próximo nível acima do alcançado."
+            : "Manter estímulos ecoicos em contexto funcional e expandir repertório verbal."
+    };
+}
+
+export function finalizeGroupLogic(groupData, groupDef, manualNotes = "") {
+    let passed = false;
+
+    if (!groupDef.qualitative_only) {
+        const rate = groupData.attempts > 0 ? groupData.correct / groupData.attempts : 0;
+        passed = groupData.attempts >= groupDef.min_trials && rate >= groupDef.reference_threshold;
+    } else {
+        // Para prosódia, a passagem é decidida manualmente via setQualitative
+        passed = groupData.passed;
+    }
+
+    return {
+        ...groupData,
+        completed: true,
+        passed,
+        notes: manualNotes || groupData.notes
     };
 }
 
 /* =========================================================
-   CONTROLE DE PROGRESSÃO
+   HELPERS
 ========================================================= */
 
-export function canAdvanceToNextGroup(state, currentGroupId) {
-    const current = state.results.find(r => r.group_id === currentGroupId);
+export function canAdvanceToNextGroup(results, currentGroupId) {
+    const current = results.find(r => r.group_id === currentGroupId);
     return current?.completed && current?.passed === true;
+}
+
+export function getGroupProgress(results) {
+    const completed = results.filter(r => r.completed).length;
+    const passed = results.filter(r => r.passed).length;
+    const total = results.length;
+
+    return {
+        completed,
+        passed,
+        total,
+        percentComplete: Math.round((completed / total) * 100),
+        percentPassed: Math.round((passed / total) * 100)
+    };
 }

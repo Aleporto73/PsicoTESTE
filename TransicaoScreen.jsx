@@ -25,14 +25,9 @@ export default function TransicaoScreen({ sessionInfo, onFinalize, onBack, isRea
     if (sessionInfo?.transicao?.categorias) {
       const initial = {};
       sessionInfo.transicao.categorias.forEach(c => {
-        // Para restaurar os itens manuais, precisamos dos detalhes originais
-        // Mas as categorias salvas no transicaoData simplificam isso.
-        // Na implementação anterior salvaremos os itens_manuais detalhados na sessão.
-        // Vou assumir que sessionInfo contém o estado das avaliações brutas para restauração se disponíveis.
         if (sessionInfo.avaliacoes_transicao_raw) {
           initial[c.categoria_id] = sessionInfo.avaliacoes_transicao_raw[c.categoria_id];
         } else {
-          // Fallback se não houver raw data salvo
           initial[c.categoria_id] = { observacao: c.observacao };
         }
       });
@@ -41,52 +36,87 @@ export default function TransicaoScreen({ sessionInfo, onFinalize, onBack, isRea
     return {};
   });
 
+  // ✅ EXTRAIR DADOS COM FALLBACK SEGURO
+  const dadosConsolidados = useMemo(() => {
+    // Calcular percentuais a partir dos scores se não existir
+    let percentuais = sessionInfo?.percentuais?.geral || null;
+
+    if (!percentuais && sessionInfo?.scores_snapshot) {
+      const scores = sessionInfo.scores_snapshot;
+      const total = Object.keys(scores).length || 1;
+      const dominados = Object.values(scores).filter(s => s === 'dominado').length;
+      const emergentes = Object.values(scores).filter(s => s === 'emergente').length;
+      const naoObs = Object.values(scores).filter(s => s === 'nao_observado').length;
+
+      percentuais = {
+        dominado: (dominados / total) * 100,
+        emergente: (emergentes / total) * 100,
+        nao_observado: (naoObs / total) * 100
+      };
+    }
+
+    // Fallback final
+    if (!percentuais) {
+      percentuais = { dominado: 0, emergente: 0, nao_observado: 0 };
+    }
+
+    return {
+      percentuais,
+      escoreBarreiras: sessionInfo?.escore_total_barreiras || 0,
+      lacunas: sessionInfo?.lacunas || []
+    };
+  }, [sessionInfo]);
+
   // Calcular itens automáticos 1-5 com base nos dados anteriores
   const itensAutomaticos = useMemo(() => {
-    const percentuais = sessionInfo.percentuais?.geral || { dominado: 0, emergente: 0, nao_observado: 0 };
-    const escoreBarreiras = sessionInfo.escore_total_barreiras || 0;
-    const lacunas = sessionInfo.lacunas || [];
+    const { percentuais, escoreBarreiras, lacunas } = dadosConsolidados;
 
     // Função auxiliar para converter percentual em pontuação 0-5
     const percentualParaPontos = (percentual) => {
-      if (percentual >= 90) return 5;
-      if (percentual >= 75) return 4;
-      if (percentual >= 60) return 3;
-      if (percentual >= 40) return 2;
-      if (percentual >= 20) return 1;
+      const p = Number(percentual) || 0;
+      if (p >= 90) return 5;
+      if (p >= 75) return 4;
+      if (p >= 60) return 3;
+      if (p >= 40) return 2;
+      if (p >= 20) return 1;
       return 0;
     };
 
     // Função auxiliar para inverter barreiras (quanto menos barreira, melhor)
     const barreirasParaPontos = (escore, max = 40) => {
-      const percentual = ((max - escore) / max) * 100;
+      const e = Number(escore) || 0;
+      const percentual = ((max - e) / max) * 100;
       return percentualParaPontos(percentual);
     };
 
+    const dominado = Number(percentuais.dominado) || 0;
+    const naoObs = Number(percentuais.nao_observado) || 0;
+    const numLacunas = lacunas.length || 0;
+
     return {
       cat_01: [
-        percentualParaPontos(percentuais.dominado),  // Item 1: Domínio geral
-        Math.min(5, Math.floor(5 - (lacunas.length / 30))),  // Item 2: Lacunas
+        percentualParaPontos(dominado),  // Item 1: Domínio geral
+        Math.max(0, Math.min(5, Math.floor(5 - (numLacunas / 30)))),  // Item 2: Lacunas
         barreirasParaPontos(escoreBarreiras),  // Item 3: Barreiras
-        percentualParaPontos(percentuais.dominado * 0.9),  // Item 4: Ajuste
-        Math.min(5, Math.floor((percentuais.dominado + (100 - (escoreBarreiras / 40 * 100))) / 40))  // Item 5: Média
+        percentualParaPontos(dominado * 0.9),  // Item 4: Ajuste
+        Math.max(0, Math.min(5, Math.floor((dominado + (100 - (escoreBarreiras / 40 * 100))) / 40)))  // Item 5: Média
       ],
       cat_02: [
-        percentualParaPontos(percentuais.dominado * 0.95),  // Item 1
+        percentualParaPontos(dominado * 0.95),  // Item 1
         Math.max(0, 5 - Math.floor(escoreBarreiras / 8)),  // Item 2
-        percentualParaPontos(percentuais.dominado * 0.85),  // Item 3
-        Math.min(5, Math.floor(5 - (lacunas.length / 35))),  // Item 4
+        percentualParaPontos(dominado * 0.85),  // Item 3
+        Math.max(0, Math.min(5, Math.floor(5 - (numLacunas / 35)))),  // Item 4
         barreirasParaPontos(escoreBarreiras, 40)  // Item 5
       ],
       cat_03: [
-        percentualParaPontos(percentuais.dominado * 0.8),  // Item 1
-        Math.max(0, Math.min(5, Math.floor(percentuais.dominado / 20))),  // Item 2
-        percentualParaPontos((100 - percentuais.nao_observado)),  // Item 3
+        percentualParaPontos(dominado * 0.8),  // Item 1
+        Math.max(0, Math.min(5, Math.floor(dominado / 20))),  // Item 2
+        percentualParaPontos((100 - naoObs)),  // Item 3
         barreirasParaPontos(escoreBarreiras, 40),  // Item 4
-        Math.min(5, Math.floor(percentuais.dominado / 18))  // Item 5
+        Math.max(0, Math.min(5, Math.floor(dominado / 18)))  // Item 5
       ]
     };
-  }, [sessionInfo]);
+  }, [dadosConsolidados]);
 
   // Calcular escores
   const calculos = useMemo(() => {
@@ -155,11 +185,18 @@ export default function TransicaoScreen({ sessionInfo, onFinalize, onBack, isRea
         })),
         escore_total: calculos.escoreTotal
       },
-      avaliacoes_transicao_raw: avaliacoes, // Salvar dados brutos para restauração
+      avaliacoes_transicao_raw: avaliacoes,
       schema_version: 'vbmapp_transicao_v1'
     };
 
     onFinalize(transicaoData);
+  };
+
+  // ✅ HELPER PARA FORMATAR NÚMERO SEGURO
+  const formatNumber = (value, decimals = 1) => {
+    const num = Number(value);
+    if (isNaN(num)) return '0';
+    return num.toFixed(decimals);
   };
 
   return (
@@ -172,7 +209,7 @@ export default function TransicaoScreen({ sessionInfo, onFinalize, onBack, isRea
           <h1>TELA 4 — Análise de Transição</h1>
           <p>Avaliação de Prontidão para Transição Educacional</p>
           <div className="session-info">
-            <strong>{sessionInfo.child_name}</strong> - Avaliado em {new Date(sessionInfo.date).toLocaleDateString('pt-BR')}
+            <strong>{sessionInfo?.child_name || 'Criança'}</strong> - Avaliado em {new Date(sessionInfo?.date || Date.now()).toLocaleDateString('pt-BR')}
           </div>
         </div>
         {onBack && (
@@ -188,15 +225,15 @@ export default function TransicaoScreen({ sessionInfo, onFinalize, onBack, isRea
         <div className="info-grid">
           <div className="info-card">
             <div className="info-label">Milestones Dominados</div>
-            <div className="info-value">{sessionInfo.percentuais?.geral?.dominado?.toFixed(1) || 0}%</div>
+            <div className="info-value">{formatNumber(dadosConsolidados.percentuais.dominado)}%</div>
           </div>
           <div className="info-card">
             <div className="info-label">Lacunas Identificadas</div>
-            <div className="info-value">{sessionInfo.lacunas?.length || 0}</div>
+            <div className="info-value">{dadosConsolidados.lacunas.length}</div>
           </div>
           <div className="info-card">
             <div className="info-label">Escore de Barreiras</div>
-            <div className="info-value">{sessionInfo.escore_total_barreiras || 0} / 40</div>
+            <div className="info-value">{dadosConsolidados.escoreBarreiras} / 40</div>
           </div>
           <div className="info-card">
             <div className="info-label">Escore de Transição</div>
@@ -714,29 +751,29 @@ function getTransicaoStyles() {
       border-color: #9ca3af;
     }
 
-      @media (max-width: 768px) {
-        .manual-item {
-          flex-direction: column;
-          align-items: flex-start;
-        }
-
-        .action-panel {
-          flex-direction: column;
-          align-items: stretch;
-        }
-
-        .escore-display {
-          justify-content: center;
-        }
+    @media (max-width: 768px) {
+      .manual-item {
+        flex-direction: column;
+        align-items: flex-start;
       }
 
-      .read-only-badge {
-        background: #eef2ff;
-        color: #4338ca;
-        padding: 0.75rem 2.5rem;
-        border-radius: 8px;
-        font-weight: 800;
-        border: 2px solid #c7d2fe;
+      .action-panel {
+        flex-direction: column;
+        align-items: stretch;
       }
-    `;
+
+      .escore-display {
+        justify-content: center;
+      }
+    }
+
+    .read-only-badge {
+      background: #eef2ff;
+      color: #4338ca;
+      padding: 0.75rem 2.5rem;
+      border-radius: 8px;
+      font-weight: 800;
+      border: 2px solid #c7d2fe;
+    }
+  `;
 }

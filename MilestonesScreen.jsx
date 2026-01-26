@@ -12,6 +12,7 @@ export default function MilestonesScreen({
   const [scores, setScores] = useState({});
   const [audience, setAudience] = useState('professional');
   const [loading, setLoading] = useState(false);
+  const [levelFilter, setLevelFilter] = useState('Todos');
 
   // ✅ CARREGAMENTO AUTOMÁTICO da sessão
   useEffect(() => {
@@ -63,6 +64,22 @@ export default function MilestonesScreen({
       percentNaoObservado: filled > 0 ? ((naoObservado / filled) * 100).toFixed(1) : '0.0'
     };
   }, [scores, totalBlocks]);
+
+  // ✅ FILTRO DE NÍVEL (Visual apenas)
+  const filteredDomains = useMemo(() => {
+    if (levelFilter === 'Todos') return domains;
+
+    const targetLevel = levelFilter.split(' ')[1]; // "1", "2" ou "3"
+
+    return domains
+      .map(domain => ({
+        ...domain,
+        blocks: domain.blocks?.filter(block =>
+          block.level && block.level.startsWith(targetLevel)
+        ) || []
+      }))
+      .filter(domain => domain.blocks.length > 0);
+  }, [domains, levelFilter]);
 
   // ✅ GERAÇÃO DE LACUNAS (para SubtestesScreen)
   const generateLacunas = () => {
@@ -425,9 +442,33 @@ export default function MilestonesScreen({
         )}
       </section>
 
+      {/* FILTRO DE NÍVEL */}
+      <section className="level-filter-bar">
+        <div className="filter-label">
+          <span className="filter-icon">🔍</span>
+          Filtrar por Nível:
+        </div>
+        <div className="filter-options">
+          {['Todos', 'Nível 1', 'Nível 2', 'Nível 3'].map(level => (
+            <button
+              key={level}
+              className={`btn filter-btn ${levelFilter === level ? 'active' : ''}`}
+              onClick={() => setLevelFilter(level)}
+            >
+              {level}
+            </button>
+          ))}
+        </div>
+        {levelFilter !== 'Todos' && (
+          <div className="filter-info">
+            Mostrando apenas itens do <strong>{levelFilter}</strong>
+          </div>
+        )}
+      </section>
+
       {/* LISTA DE DOMÍNIOS E BLOCOS */}
       <div className="domains-container">
-        {domains.map(domain => {
+        {filteredDomains.map(domain => {
           const domainBlocks = domain.blocks || [];
           const domainScores = domainBlocks
             .map(block => scores[block.block_id])
@@ -1464,6 +1505,86 @@ function getMilestonesStyles() {
 
     .block-card {
       animation: fadeIn 0.3s ease-out;
+    }
+
+    /* FILTRO DE NÍVEL */
+    .level-filter-bar {
+      background: white;
+      padding: 20px 32px;
+      border-radius: 16px;
+      margin-bottom: 30px;
+      border: 2px solid #e2e8f0;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04);
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .filter-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filter-icon {
+      font-size: 18px;
+    }
+
+    .filter-options {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      background: #f1f5f9;
+      color: #64748b;
+      border: 2px solid #e2e8f0;
+      padding: 10px 24px;
+      min-width: 100px;
+    }
+
+    .filter-btn:hover {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+    }
+
+    .filter-btn.active {
+      background: #4f46e5;
+      color: white;
+      border-color: #4f46e5;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+    }
+
+    .filter-info {
+      margin-left: auto;
+      font-size: 14px;
+      color: #64748b;
+      background: #f8fafc;
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+
+    @media (max-width: 768px) {
+      .level-filter-bar {
+        padding: 20px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+      }
+      
+      .filter-info {
+        margin-left: 0;
+        width: 100%;
+        text-align: center;
+      }
     }
   `;
 }

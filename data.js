@@ -59,8 +59,8 @@ const VBMAPP_DATA = {
                     "level": "2-M",
                     "order": 36,
                     "status": "active",
-                    "texto_profissional": "Procura por parte de um brinquedo que esta faltando ou correspondente em um ambiente para 5 itens ou sets (ex. Peça de um quebra cabeça, mamadeira para uma boneca de bebê) (T/O)",
-                    "texto_responsavel": "Procura por parte de um brinquedo que esta faltando ou correspondente em um ambiente para 5 itens ou sets (ex. Peça de um quebra cabeça, mamadeira para uma boneca de bebê) (T/O)"
+                    "texto_profissional": "Procura por parte de um brinquedo que está faltando ou correspondente em um ambiente para 5 itens ou sets (ex. Peça de um quebra cabeça, mamadeira para uma boneca de bebê) (T/O)",
+                    "texto_responsavel": "Procura por parte de um brinquedo que está faltando ou correspondente em um ambiente para 5 itens ou sets (ex. Peça de um quebra cabeça, mamadeira para uma boneca de bebê) (T/O)"
                 },
                 {
                     "block_id": "DOM01-L2-M07",
@@ -146,8 +146,8 @@ const VBMAPP_DATA = {
                     "level": "1-M",
                     "order": 6,
                     "status": "active",
-                    "texto_profissional": "Faz contato visual como um mando por 5 vezes (TO: 30 min)",
-                    "texto_responsavel": "Faz contato visual como um mando por 5 vezes (TO: 30 min)"
+                    "texto_profissional": "Faz contato visual contingente para obter atenção ou interação social, 5 vezes (TO: 30 min)",
+                    "texto_responsavel": "Faz contato visual contingente para obter atenção ou interação social, 5 vezes"
                 },
                 {
                     "block_id": "DOM02-L1-M02",
@@ -162,16 +162,16 @@ const VBMAPP_DATA = {
                     "level": "1-M",
                     "order": 8,
                     "status": "active",
-                    "texto_profissional": "Faz contato visual com outras crianças 5 vezes (TO: 30min)",
-                    "texto_responsavel": "Faz contato visual com outras crianças 5 vezes (TO: 30min)"
+                    "texto_profissional": "Faz contato visual com outras crianças 5 vezes (TO: 30 min)",
+                    "texto_responsavel": "Faz contato visual com outras crianças 5 vezes (TO: 30 min)"
                 },
                 {
                     "block_id": "DOM02-L1-M04",
                     "level": "1-M",
                     "order": 9,
                     "status": "active",
-                    "texto_profissional": "Espontaneamente se engaja em brincadeiras paralelas quando está próximo de outra criança por 2 vezes (ex. senta em uma caixa de areia próximo à outras crianças) (TO: 30min)",
-                    "texto_responsavel": "Espontaneamente se engaja em brincadeiras paralelas quando está próximo de outra criança por 2 vezes (ex. senta em uma caixa de areia próximo à outras crianças) (TO: 30min)"
+                    "texto_profissional": "Espontaneamente se engaja em brincadeiras paralelas quando está próximo de outra criança por 2 vezes (ex. senta em uma caixa de areia próximo à outras crianças) (TO: 30 min)",
+                    "texto_responsavel": "Espontaneamente se engaja em brincadeiras paralelas quando está próximo de outra criança por 2 vezes (ex. senta em uma caixa de areia próximo à outras crianças) (TO: 30 min)"
                 },
                 {
                     "block_id": "DOM02-L1-M05",
@@ -186,24 +186,24 @@ const VBMAPP_DATA = {
                     "level": "2-M",
                     "order": 41,
                     "status": "active",
-                    "texto_profissional": "Inicia uma interação física com um colega 2 vezes (ex.: um empurrão em um carro, segura a mão, brinca de roda). (TO: 30 min.)",
-                    "texto_responsavel": "Inicia uma interação física com um colega 2 vezes (ex.: um empurrão em um carro, segura a mão, brinca de roda). (TO: 30 min.)"
+                    "texto_profissional": "Inicia uma interação física com um colega 2 vezes (ex.: um empurrão em um carro, segura a mão, brinca de roda). (TO: 30 min)",
+                    "texto_responsavel": "Inicia uma interação física com um colega 2 vezes (ex.: um empurrão em um carro, segura a mão, brinca de roda). (TO: 30 min)"
                 },
                 {
                     "block_id": "DOM02-L2-M07",
                     "level": "2-M",
                     "order": 42,
                     "status": "active",
-                    "texto_profissional": "Espontaneamente emite mando aos colegas 5 vezes (ex.: minha vez, empurre-me, olhe! Venha.)(TO: 60 min.)",
-                    "texto_responsavel": "Espontaneamente emite mando aos colegas 5 vezes (ex.: minha vez, empurre-me, olhe! Venha.)(TO: 60 min.)"
+                    "texto_profissional": "Espontaneamente emite mando aos colegas 5 vezes (ex.: minha vez, empurre-me, olhe! Venha). (TO: 60 min)",
+                    "texto_responsavel": "Espontaneamente emite mando aos colegas 5 vezes (ex.: minha vez, empurre-me, olhe! Venha). (TO: 60 min)"
                 },
                 {
                     "block_id": "DOM02-L2-M08",
                     "level": "2-M",
                     "order": 43,
                     "status": "active",
-                    "texto_profissional": "Engaja em brincadeira social continuada com colegas por 3 minutos sem dicas de adultos ou reforçamento (ex.: cooperativamente cria um conjunto de jogo, joga água). (TO: 30 min.)",
-                    "texto_responsavel": "Engaja em brincadeira social continuada com colegas por 3 minutos sem dicas de adultos ou reforçamento (ex.: cooperativamente cria um conjunto de jogo, joga água). (TO: 30 min.)"
+                    "texto_profissional": "Engaja em brincadeira social continuada com colegas por 3 minutos sem dicas de adultos ou reforçamento (ex.: cooperativamente cria um conjunto de jogo, joga água). (TO: 30 min)",
+                    "texto_responsavel": "Engaja em brincadeira social continuada com colegas por 3 minutos sem dicas de adultos ou reforçamento (ex.: cooperativamente cria um conjunto de jogo, joga água). (TO: 30 min)"
                 },
                 {
                     "block_id": "DOM02-L2-M09",
@@ -218,32 +218,32 @@ const VBMAPP_DATA = {
                     "level": "2-M",
                     "order": 45,
                     "status": "active",
-                    "texto_profissional": "Espontaneamente pede aos colegas para participar de jogos, brincadeira social etc., 2 vezes. (ex. Vamos garotos. Vamos cavar um buraco.) (TO: 60 min.)",
-                    "texto_responsavel": "Espontaneamente pede aos colegas para participar de jogos, brincadeira social etc., 2 vezes. (ex. Vamos garotos. Vamos cavar um buraco.) (TO: 60 min.)"
+                    "texto_profissional": "Espontaneamente pede aos colegas para participar de jogos, brincadeira social etc., 2 vezes. (ex. Vamos garotos. Vamos cavar um buraco.) (TO: 60 min)",
+                    "texto_responsavel": "Espontaneamente pede aos colegas para participar de jogos, brincadeira social etc., 2 vezes. (ex. Vamos garotos. Vamos cavar um buraco.) (TO: 60 min)"
                 },
                 {
                     "block_id": "DOM02-L3-M11",
                     "level": "3-M",
                     "order": 96,
                     "status": "active",
-                    "texto_profissional": "Espontaneamente coopera com um par para atingir um resultado específico, 5 vezes (Uma criança segura um balde enquanto o coloca a água) (T/O)",
-                    "texto_responsavel": "Espontaneamente coopera com um par para atingir um resultado específico, 5 vezes (Uma criança segura um balde enquanto o coloca a água) (T/O)"
+                    "texto_profissional": "Espontaneamente coopera com um par para atingir um resultado específico, 5 vezes (Uma criança segura um balde enquanto o outro coloca a água) (T/O)",
+                    "texto_responsavel": "Espontaneamente coopera com um par para atingir um resultado específico, 5 vezes (Uma criança segura um balde enquanto o outro coloca a água) (T/O)"
                 },
                 {
                     "block_id": "DOM02-L3-M12",
                     "level": "3-M",
                     "order": 97,
                     "status": "active",
-                    "texto_profissional": "Espontaneamente manda para colegas com um pronome interrogativo, 5 vezes (ex. Onde você está indo? O que é isto? Quem você está sendo? (TO: 60 min)",
-                    "texto_responsavel": "Espontaneamente manda para colegas com um pronome interrogativo, 5 vezes (ex. Onde você está indo? O que é isto? Quem você está sendo? (TO: 60 min)"
+                    "texto_profissional": "Espontaneamente manda para colegas com um pronome interrogativo, 5 vezes (ex. Onde você está indo? O que é isto? Quem é esse?) (TO: 60 min)",
+                    "texto_responsavel": "Espontaneamente manda para colegas com um pronome interrogativo, 5 vezes (ex. Onde você está indo? O que é isto? Quem é esse?) (TO: 60 min)"
                 },
                 {
                     "block_id": "DOM02-L3-M13",
                     "level": "3-M",
                     "order": 98,
                     "status": "active",
-                    "texto_profissional": "Intraverbalmente responde a 5 diferentes perguntas ou afirmações de um colega (ex., verbalmente responde a Do que você quer brincar?) (TO: 60 min)",
-                    "texto_responsavel": "Intraverbalmente responde a 5 diferentes perguntas ou afirmações de um colega (ex., verbalmente responde a Do que você quer brincar?) (TO: 60 min)"
+                    "texto_profissional": "Responde intraverbalmente a 5 diferentes perguntas ou afirmações de um colega (ex., verbalmente responde a Do que você quer brincar?) (TO: 60 min)",
+                    "texto_responsavel": "Responde intraverbalmente a 5 diferentes perguntas ou afirmações de um colega (ex., verbalmente responde a Do que você quer brincar?) (TO: 60 min)"
                 },
                 {
                     "block_id": "DOM02-L3-M14",
@@ -320,8 +320,8 @@ const VBMAPP_DATA = {
                     "level": "2-M",
                     "order": 46,
                     "status": "active",
-                    "texto_profissional": "A articulação da criança de 10 tatos pode ser entendida por adultos familiares que não pode ver o item tateado",
-                    "texto_responsavel": "A articulação da criança de 10 tatos pode ser entendida por adultos familiares que não pode ver o item tateado"
+                    "texto_profissional": "A articulação da criança de 10 tatos pode ser entendida por adultos familiares que não podem ver o item tateado",
+                    "texto_responsavel": "A articulação da criança de 10 tatos pode ser entendida por adultos familiares que não podem ver o item tateado"
                 },
                 {
                     "block_id": "DOM04-L2-M07",
@@ -360,8 +360,8 @@ const VBMAPP_DATA = {
                     "level": "3-M",
                     "order": 106,
                     "status": "active",
-                    "texto_profissional": "Emite flexões nominais combinando 10 substantivos originais com sufixos plurais (ex. cachorro vs. cachorros) e 10 substantivos originais com pronomes possessivos? (ex. a coleira do cachorro vs. a coleira do gato) (T/O)",
-                    "texto_responsavel": "Emite flexões nominais combinando 10 substantivos originais com sufixos plurais (ex. cachorro vs. cachorros) e 10 substantivos originais com pronomes possessivos? (ex. a coleira do cachorro vs. a coleira do gato) (T/O)"
+                    "texto_profissional": "Emite flexões nominais combinando 10 substantivos originais com sufixos plurais (ex. cachorro vs. cachorros) e 10 substantivos originais com pronomes possessivos (ex. a coleira do cachorro vs. a coleira do gato) (T/O)",
+                    "texto_responsavel": "Emite flexões nominais combinando 10 substantivos originais com sufixos plurais (ex. cachorro vs. cachorros) e 10 substantivos originais com pronomes possessivos (ex. a coleira do cachorro vs. a coleira do gato) (T/O)"
                 },
                 {
                     "block_id": "DOM04-L3-M12",
@@ -503,8 +503,8 @@ const VBMAPP_DATA = {
                     "level": "3-M",
                     "order": 113,
                     "status": "active",
-                    "texto_profissional": "Completa 20 tipos de blocos diferentes, parquety, quebra-cabeças de formas, ou tarefas similares em pelo menos 8 peças diferentes (T)",
-                    "texto_responsavel": "Completa 20 tipos de blocos diferentes, parquety, quebra-cabeças de formas, ou tarefas similares em pelo menos 8 peças diferentes (T)"
+                    "texto_profissional": "Completa 20 tipos de blocos diferentes, jogos de encaixe, quebra-cabeças de formas, ou tarefas similares em pelo menos 8 peças diferentes (T)",
+                    "texto_responsavel": "Completa 20 tipos de blocos diferentes, jogos de encaixe, quebra-cabeças de formas, ou tarefas similares em pelo menos 8 peças diferentes (T)"
                 },
                 {
                     "block_id": "DOM05-L3-M14",
@@ -645,32 +645,32 @@ const VBMAPP_DATA = {
                     "level": "2-M",
                     "order": 64,
                     "status": "active",
-                    "texto_profissional": "Responde 25 questões “o que” diferentes (ex.: Quem são seus amigos? Onde está seu travesseiro?) (T)",
-                    "texto_responsavel": "Responde 25 questões “o que” diferentes (ex.: Quem são seus amigos? Onde está seu travesseiro?) (T)"
+                    "texto_profissional": "Responde 25 questões “o que”, “quem” e “onde” diferentes (ex.: Quem são seus amigos? Onde está seu travesseiro?) (T)",
+                    "texto_responsavel": "Responde 25 questões “o que”, “quem” e “onde” diferentes (ex.: Quem são seus amigos? Onde está seu travesseiro?) (T)"
                 },
                 {
                     "block_id": "DOM07-L2-M10",
                     "level": "2-M",
                     "order": 65,
                     "status": "active",
-                    "texto_profissional": "Responde 25 diferentes questões “quem” e “onde” (ex.: Quem são seus amigos? Onde está o travesseiro?) (T)",
-                    "texto_responsavel": "Responde 25 diferentes questões “quem” e “onde” (ex.: Quem são seus amigos? Onde está o travesseiro?) (T)"
+                    "texto_profissional": "Responde 25 diferentes questões “por que” e “como” simples (T)",
+                    "texto_responsavel": "Responde 25 diferentes questões “por que” e “como” simples (T)"
                 },
                 {
                     "block_id": "DOM07-L3-M11",
                     "level": "3-M",
                     "order": 116,
                     "status": "active",
-                    "texto_profissional": "Espontaneamente emite 20 intraverbais em forma de comentário (pode ser parte mando) (ex. o pai diz eu estou indo para o carro e a criança espontaneamente diz eu querodar uma volta!) (O).",
-                    "texto_responsavel": "Espontaneamente emite 20 intraverbais em forma de comentário (pode ser parte mando) (ex. o pai diz eu estou indo para o carro e a criança espontaneamente diz eu querodar uma volta!) (O)."
+                    "texto_profissional": "Espontaneamente emite 20 intraverbais em forma de comentário (pode ser parte mando) (ex. o pai diz eu estou indo para o carro e a criança espontaneamente diz eu quero dar uma volta!) (O)",
+                    "texto_responsavel": "Espontaneamente emite 20 intraverbais em forma de comentário (pode ser parte mando) (ex. o pai diz eu estou indo para o carro e a criança espontaneamente diz eu quero dar uma volta!) (O)"
                 },
                 {
                     "block_id": "DOM07-L3-M12",
                     "level": "3-M",
                     "order": 117,
                     "status": "active",
-                    "texto_profissional": "Demonstra 300 ou mais respostas intraverbais, testadas ou obtidas da lista acumulada de respostas intraverbais conhecidas (T).",
-                    "texto_responsavel": "Demonstra 300 ou mais respostas intraverbais, testadas ou obtidas da lista acumulada de respostas intraverbais conhecidas (T)."
+                    "texto_profissional": "Demonstra 300 ou mais respostas intraverbais, testadas ou obtidas da lista acumulada de respostas intraverbais conhecidas (T)",
+                    "texto_responsavel": "Demonstra 300 ou mais respostas intraverbais, testadas ou obtidas da lista acumulada de respostas intraverbais conhecidas (T)"
                 },
                 {
                     "block_id": "DOM07-L3-M13",
@@ -685,8 +685,8 @@ const VBMAPP_DATA = {
                     "level": "3-M",
                     "order": 119,
                     "status": "active",
-                    "texto_profissional": "Descreve 25 eventos, vídeos, histórias, etc. diferentes com 8 ou mais palavras (ex. conte-me o que acontece...o monstro grande assustou todo mundo e todos correram para dentro de casa) (T/O).",
-                    "texto_responsavel": "Descreve 25 eventos, vídeos, histórias, etc. diferentes com 8 ou mais palavras (ex. conte-me o que acontece...o monstro grande assustou todo mundo e todos correram para dentro de casa) (T/O)."
+                    "texto_profissional": "Descreve 25 eventos, vídeos, histórias, etc. diferentes com 8 ou mais palavras (ex. conte-me o que acontece...o monstro grande assustou todo mundo e todos correram para dentro de casa) (T/O)",
+                    "texto_responsavel": "Descreve 25 eventos, vídeos, histórias, etc. diferentes com 8 ou mais palavras (ex. conte-me o que acontece...o monstro grande assustou todo mundo e todos correram para dentro de casa) (T/O)"
                 },
                 {
                     "block_id": "DOM07-L3-M15",
@@ -708,8 +708,8 @@ const VBMAPP_DATA = {
                     "level": "3-M",
                     "order": 121,
                     "status": "active",
-                    "texto_profissional": "Atenta para um livro quando uma história está sendo lida para a criança em 75% das vezes (TO: 3min)",
-                    "texto_responsavel": "Atenta para um livro quando uma história está sendo lida para a criança em 75% das vezes (TO: 3min)"
+                    "texto_profissional": "Atenta para um livro quando uma história está sendo lida para a criança em 75% das vezes (TO: 3 min)",
+                    "texto_responsavel": "Atenta para um livro quando uma história está sendo lida para a criança em 75% das vezes (TO: 3 min)"
                 },
                 {
                     "block_id": "DOM08-L3-M12",
@@ -763,16 +763,16 @@ const VBMAPP_DATA = {
                     "level": "1-M",
                     "order": 22,
                     "status": "active",
-                    "texto_profissional": "Emite 4 mandos diferentes sem dicas (exceto O que você quer?) - o item desejado pode estar presente (ex. música, mola maluca,bola ) (T)",
-                    "texto_responsavel": "Emite 4 mandos diferentes sem dicas (exceto O que você quer?) - o item desejado pode estar presente (ex. música, mola maluca,bola ) (T)"
+                    "texto_profissional": "Emite 4 mandos diferentes sem dicas (exceto O que você quer?) - o item desejado pode estar presente (ex. música, mola maluca, bola ) (T)",
+                    "texto_responsavel": "Emite 4 mandos diferentes sem dicas (exceto O que você quer?) - o item desejado pode estar presente (ex. música, mola maluca, bola ) (T)"
                 },
                 {
                     "block_id": "DOM09-L1-M03",
                     "level": "1-M",
                     "order": 23,
                     "status": "active",
-                    "texto_profissional": "Generaliza 6 mandos entre 2 pessoas, 2 ambientes e 2 diferentes exemplares de um reforçador (ex. pede porbolhas de sabãopara a mãe e para o pai, dentro e fora, um recipiente vermelho e um azul) (T/O)",
-                    "texto_responsavel": "Generaliza 6 mandos entre 2 pessoas, 2 ambientes e 2 diferentes exemplares de um reforçador (ex. pede porbolhas de sabãopara a mãe e para o pai, dentro e fora, um recipiente vermelho e um azul) (T/O)"
+                    "texto_profissional": "Generaliza 6 mandos entre 2 pessoas, 2 ambientes e 2 diferentes exemplares de um reforçador (ex. pede por bolhas de sabão para a mãe e para o pai, dentro e fora, um recipiente vermelho e um azul) (T/O)",
+                    "texto_responsavel": "Generaliza 6 mandos entre 2 pessoas, 2 ambientes e 2 diferentes exemplares de um reforçador (ex. pede por bolhas de sabão para a mãe e para o pai, dentro e fora, um recipiente vermelho e um azul) (T/O)"
                 },
                 {
                     "block_id": "DOM09-L1-M04",
@@ -795,8 +795,8 @@ const VBMAPP_DATA = {
                     "level": "2-M",
                     "order": 66,
                     "status": "active",
-                    "texto_profissional": "Pede por 20 diferentes itens que não estão presentes, sem dica (exceto ex. O que você precisa?) (ex. pede por papel quando entregue um giz de cera) (T/O)",
-                    "texto_responsavel": "Pede por 20 diferentes itens que não estão presentes, sem dica (exceto ex. O que você precisa?) (ex. pede por papel quando entregue um giz de cera) (T/O)"
+                    "texto_profissional": "Pede por 20 diferentes itens que não estão presentes, sem dica (exceto ex. 'O que você precisa?') (ex. pede por papel quando entregue um giz de cera) (T/O)",
+                    "texto_responsavel": "Pede por 20 diferentes itens que não estão presentes, sem dica (exceto ex. 'O que você precisa?') (ex. pede por papel quando entregue um giz de cera) (T/O)"
                 },
                 {
                     "block_id": "DOM09-L2-M07",
@@ -811,16 +811,16 @@ const VBMAPP_DATA = {
                     "level": "2-M",
                     "order": 68,
                     "status": "active",
-                    "texto_profissional": "Emite 5 mandos diferentes que contenham 2 ou mais palavras (Não incluindo Eu quero) (ex. Vai rápido. Minha vez. Serve o suco.) (TO: 60 min.)",
-                    "texto_responsavel": "Emite 5 mandos diferentes que contenham 2 ou mais palavras (Não incluindo Eu quero) (ex. Vai rápido. Minha vez. Serve o suco.) (TO: 60 min.)"
+                    "texto_profissional": "Emite 5 mandos diferentes que contenham 2 ou mais palavras (Não incluindo Eu quero) (ex. Vai rápido. Minha vez. Serve o suco.) (TO: 60 min)",
+                    "texto_responsavel": "Emite 5 mandos diferentes que contenham 2 ou mais palavras (Não incluindo Eu quero) (ex. Vai rápido. Minha vez. Serve o suco.) (TO: 60 min)"
                 },
                 {
                     "block_id": "DOM09-L2-M09",
                     "level": "2-M",
                     "order": 69,
                     "status": "active",
-                    "texto_profissional": "Espontaneamente emite 15 mandos diferentes (ex. Vamos jogar. Abra. Eu quero livro.) (TO: 30 min.)",
-                    "texto_responsavel": "Espontaneamente emite 15 mandos diferentes (ex. Vamos jogar. Abra. Eu quero livro.) (TO: 30 min.)"
+                    "texto_profissional": "Espontaneamente emite 15 mandos diferentes (ex. Vamos jogar. Abra. Eu quero livro.) (TO: 30 min)",
+                    "texto_responsavel": "Espontaneamente emite 15 mandos diferentes (ex. Vamos jogar. Abra. Eu quero livro.) (TO: 30 min)"
                 },
                 {
                     "block_id": "DOM09-L2-M10",
@@ -835,8 +835,8 @@ const VBMAPP_DATA = {
                     "level": "3-M",
                     "order": 126,
                     "status": "active",
-                    "texto_profissional": "Espontaneamente pede por diferentes informações verbais usando pronomes interrogativos ou uma palavra interrogativa 5 vezes (ex. Qual o seu nome? Onde eu vou?) (TO:60 min)",
-                    "texto_responsavel": "Espontaneamente pede por diferentes informações verbais usando pronomes interrogativos ou uma palavra interrogativa 5 vezes (ex. Qual o seu nome? Onde eu vou?) (TO:60 min)"
+                    "texto_profissional": "Espontaneamente pede por diferentes informações verbais usando pronomes interrogativos ou uma palavra interrogativa 5 vezes (ex. Qual o seu nome? Onde eu vou?) (TO: 60 min)",
+                    "texto_responsavel": "Espontaneamente pede por diferentes informações verbais usando pronomes interrogativos ou uma palavra interrogativa 5 vezes (ex. Qual o seu nome? Onde eu vou?) (TO: 60 min)"
                 },
                 {
                     "block_id": "DOM09-L3-M12",
@@ -851,8 +851,8 @@ const VBMAPP_DATA = {
                     "level": "3-M",
                     "order": 128,
                     "status": "active",
-                    "texto_profissional": "Mandos com 10 adjetivos diferentes, preposições ou advérbios (ex. Meu lápis está quebrado. Não tire isso. Vá rápido) (TO: 60min)",
-                    "texto_responsavel": "Mandos com 10 adjetivos diferentes, preposições ou advérbios (ex. Meu lápis está quebrado. Não tire isso. Vá rápido) (TO: 60min)"
+                    "texto_profissional": "Mandos com 10 adjetivos diferentes, preposições ou advérbios (ex. Meu lápis está quebrado. Não tire isso. Vá rápido) (TO: 60 min)",
+                    "texto_responsavel": "Mandos com 10 adjetivos diferentes, preposições ou advérbios (ex. Meu lápis está quebrado. Não tire isso. Vá rápido) (TO: 60 min)"
                 },
                 {
                     "block_id": "DOM09-L3-M14",
@@ -906,8 +906,8 @@ const VBMAPP_DATA = {
                     "level": "3-M",
                     "order": 134,
                     "status": "active",
-                    "texto_profissional": "Identifica como um ouvinte 8 comparações diferentes envolvendo medidas(ex.: Me mostre o mais ou o menos, o grande ou o pequeno, o muito ou o pouco, o cheio ou o vazio, o alto ou o baixo)(T)",
-                    "texto_responsavel": "Identifica como um ouvinte 8 comparações diferentes envolvendo medidas(ex.: Me mostre o mais ou o menos, o grande ou o pequeno, o muito ou o pouco, o cheio ou o vazio, o alto ou o baixo)(T)"
+                    "texto_profissional": "Identifica como um ouvinte 8 comparações diferentes envolvendo medidas (ex.: Me mostre o mais ou o menos, o grande ou o pequeno, o muito ou o pouco, o cheio ou o vazio, o alto ou o baixo)(T)",
+                    "texto_responsavel": "Identifica como um ouvinte 8 comparações diferentes envolvendo medidas (ex.: Me mostre o mais ou o menos, o grande ou o pequeno, o muito ou o pouco, o cheio ou o vazio, o alto ou o baixo)(T)"
                 },
                 {
                     "block_id": "DOM10-L3-M15",
@@ -929,8 +929,8 @@ const VBMAPP_DATA = {
                     "level": "1-M",
                     "order": 26,
                     "status": "active",
-                    "texto_profissional": "Atenta para a voz de um falante fazendo contato visual com o mesmo, 5 vezes (TO: 30 min.)",
-                    "texto_responsavel": "Atenta para a voz de um falante fazendo contato visual com o mesmo, 5 vezes (TO: 30 min.)"
+                    "texto_profissional": "Atenta para a voz de um falante fazendo contato visual com o mesmo, 5 vezes (TO: 30 min)",
+                    "texto_responsavel": "Atenta para a voz de um falante fazendo contato visual com o mesmo, 5 vezes (TO: 30 min)"
                 },
                 {
                     "block_id": "DOM11-L1-M02",
@@ -953,8 +953,8 @@ const VBMAPP_DATA = {
                     "level": "1-M",
                     "order": 29,
                     "status": "active",
-                    "texto_profissional": "Desempenha 4 ações motoras diferentes sob comando, sem dica visual (ex. Vocêpode pular?Bata palmas) (T)",
-                    "texto_responsavel": "Desempenha 4 ações motoras diferentes sob comando, sem dica visual (ex. Vocêpode pular?Bata palmas) (T)"
+                    "texto_profissional": "Desempenha 4 ações motoras diferentes sob comando, sem dica visual (ex. Você pode pular? Bata palmas) (T)",
+                    "texto_responsavel": "Desempenha 4 ações motoras diferentes sob comando, sem dica visual (ex. Você pode pular? Bata palmas) (T)"
                 },
                 {
                     "block_id": "DOM11-L1-M05",
@@ -1112,8 +1112,8 @@ const VBMAPP_DATA = {
                     "level": "3-M",
                     "order": 143,
                     "status": "active",
-                    "texto_profissional": "Seleciona itens de uma página de livro ou no ambiente natural com base em três componentes verbais (ex. verbo, adjetivo, preposição, pronome) para 25 questões de QU em tarefas de ouvinte por FCC (ex. qual fruta cresce em árvore?) (T).",
-                    "texto_responsavel": "Seleciona itens de uma página de livro ou no ambiente natural com base em três componentes verbais (ex. verbo, adjetivo, preposição, pronome) para 25 questões de QU em tarefas de ouvinte por FCC (ex. qual fruta cresce em árvore?) (T)."
+                    "texto_profissional": "Seleciona itens de uma página de livro ou no ambiente natural com base em três componentes verbais (ex. verbo, adjetivo, preposição, pronome) para 25 questões de QU em tarefas de ouvinte por FCC (ex. qual fruta cresce em árvore?) (T)",
+                    "texto_responsavel": "Seleciona itens de uma página de livro ou no ambiente natural com base em três componentes verbais (ex. verbo, adjetivo, preposição, pronome) para 25 questões de QU em tarefas de ouvinte por FCC (ex. qual fruta cresce em árvore?) (T)"
                 },
                 {
                     "block_id": "DOM12-L3-M14",
@@ -1246,8 +1246,8 @@ const VBMAPP_DATA = {
                     "level": "1-M",
                     "order": 34,
                     "status": "active",
-                    "texto_profissional": "Tateia espontaneamente 2 itens diferentes (sem dicas verbais) (TO: 60 min.)",
-                    "texto_responsavel": "Tateia espontaneamente 2 itens diferentes (sem dicas verbais) (TO: 60 min.)"
+                    "texto_profissional": "Tateia espontaneamente 2 itens diferentes (sem dicas verbais) (TO: 60 min)",
+                    "texto_responsavel": "Tateia espontaneamente 2 itens diferentes (sem dicas verbais) (TO: 60 min)"
                 },
                 {
                     "block_id": "DOM14-L1-M05",
