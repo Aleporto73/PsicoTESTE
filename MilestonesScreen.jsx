@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { TASK_ANALYSIS_MAP } from './taskAnalysisData';
 
 export default function MilestonesScreen({
   data,
@@ -13,6 +14,10 @@ export default function MilestonesScreen({
   const [audience, setAudience] = useState('professional');
   const [loading, setLoading] = useState(false);
   const [levelFilter, setLevelFilter] = useState('Todos');
+  const [auditLog, setAuditLog] = useState({}); // { level: { user, timestamp } }
+
+  // ✅ ESTADO PARA A GAVETA LATERAL
+  const [activeTaskBlock, setActiveTaskBlock] = useState(null);
 
   // ✅ CARREGAMENTO AUTOMÁTICO da sessão
   useEffect(() => {
@@ -40,30 +45,55 @@ export default function MilestonesScreen({
     total + (domain.blocks?.length || 0), 0
   );
 
-  // ✅ CÁLCULO DE PROGRESSO (otimizado)
+  // ✅ CÁLCULO DE PROGRESSO (RELATIVO AO NÍVEL)
   const progress = useMemo(() => {
-    const values = Object.values(scores);
-    const filled = values.length;
-    const dominado = values.filter(v => v === 'dominado').length;
-    const emergente = values.filter(v => v === 'emergente').length;
-    const naoObservado = values.filter(v => v === 'nao_observado').length;
+    const isLevelFiltered = levelFilter !== 'Todos';
+    const targetLevel = isLevelFiltered ? levelFilter.split(' ')[1] : null;
 
-    const percentComplete = totalBlocks > 0
-      ? ((filled / totalBlocks) * 100).toFixed(1)
+    // Identificar blocos do contexto atual
+    let currentContextBlocks = [];
+    domains.forEach(d => {
+      d.blocks?.forEach(b => {
+        if (!isLevelFiltered || (b.level && b.level.startsWith(targetLevel))) {
+          currentContextBlocks.push(b);
+        }
+      });
+    });
+
+    const totalInContext = currentContextBlocks.length;
+    const scoresInContext = currentContextBlocks.map(b => scores[b.block_id]).filter(Boolean);
+
+    const evaluated = scoresInContext.filter(v => v === 'dominado' || v === 'emergente').length;
+    const notObserved = scoresInContext.filter(v => v === 'nao_observado').length;
+    const filled = scoresInContext.length;
+    const pending = totalInContext - filled;
+
+    const percentComplete = totalInContext > 0
+      ? ((filled / totalInContext) * 100).toFixed(1)
       : '0.0';
 
+    // Stats Globais (sempre para o payload)
+    const globalScores = Object.values(scores);
+    const globalEvaluated = globalScores.filter(v => v === 'dominado' || v === 'emergente').length;
+
     return {
-      totalBlocks,
+      totalBlocks: totalInContext,
       filled,
-      dominado,
-      emergente,
-      naoObservado,
-      percentComplete,
-      percentDominado: filled > 0 ? ((dominado / filled) * 100).toFixed(1) : '0.0',
-      percentEmergente: filled > 0 ? ((emergente / filled) * 100).toFixed(1) : '0.0',
-      percentNaoObservado: filled > 0 ? ((naoObservado / filled) * 100).toFixed(1) : '0.0'
+      isLevelFiltered,
+      context: {
+        name: levelFilter,
+        evaluated,
+        notObserved,
+        pending,
+        percent: percentComplete
+      },
+      global: {
+        total: totalBlocks,
+        evaluated: globalEvaluated,
+        percent: ((globalScores.length / totalBlocks) * 100).toFixed(1)
+      }
     };
-  }, [scores, totalBlocks]);
+  }, [scores, totalBlocks, levelFilter, domains]);
 
   // ✅ FILTRO DE NÍVEL (Visual apenas)
   const filteredDomains = useMemo(() => {
@@ -128,26 +158,53 @@ export default function MilestonesScreen({
     });
   };
 
-  // ✅ VALIDAÇÃO PARA FINALIZAR
+  // ✅ VALIDAÇÃO PARA FINALIZAR (FLEXÍVEL)
   const canFinalize = useMemo(() => {
     const validName = childName.trim().length >= 3;
-    const allBlocksFilled = progress.filled === progress.totalBlocks;
-    const hasData = progress.totalBlocks > 0;
+    const hasAnyScore = Object.keys(scores).length > 0;
 
-    return validName && allBlocksFilled && hasData;
-  }, [childName, progress]);
+    return validName && hasAnyScore;
+  }, [childName, scores]);
 
-  // ✅ FUNÇÃO PRINCIPAL: FINALIZAR MILESTONES
+  // ✅ FUNÇÃO PARA ENCERRAR NÍVEL MANUALMENTE
+  const handleCloseLevel = (levelId) => {
+    if (isReadOnly) return;
+
+    const confirmClose = window.confirm(`Deseja encerrar o Nível ${levelId}? Todos os itens vazios desta fase serão marcados como 'Não Observado'.`);
+    if (!confirmClose) return;
+
+    setScores(prev => {
+      const newScores = { ...prev };
+      domains.forEach(d => {
+        d.blocks?.forEach(b => {
+          if (b.level && b.level.startsWith(levelId) && !newScores[b.block_id]) {
+            newScores[b.block_id] = 'nao_observado';
+          }
+        });
+      });
+      return newScores;
+    });
+
+    setAuditLog(prev => ({
+      ...prev,
+      [`nivel_${levelId}`]: {
+        action: 'level_closed',
+        timestamp: new Date().toISOString(),
+        user: sessionInfo?.user_name || 'Profissional'
+      }
+    }));
+
+    console.log(`🔒 Nível ${levelId} encerrado manualmente.`);
+  };
+
+  // ✅ FUNÇÃO PRINCIPAL: FINALIZAR MILESTONES (COM AUTOMAÇÃO)
   const handleFinalize = async () => {
     if (!canFinalize) {
       if (childName.trim().length < 3) {
         alert('⚠️ Por favor, digite o nome da criança (mínimo 3 caracteres).');
         return;
       }
-      if (progress.filled < progress.totalBlocks) {
-        alert(`⏳ Você precisa avaliar TODOS os ${progress.totalBlocks} blocos.\nFaltam ${progress.totalBlocks - progress.filled} blocos.`);
-        return;
-      }
+      alert('⚠️ Por favor, preencha pelo menos um item para finalizar.');
       return;
     }
 
@@ -155,14 +212,44 @@ export default function MilestonesScreen({
     console.log("🚀 Iniciando finalização da MilestonesScreen...");
 
     try {
-      // Gerar lacunas para a próxima tela (Subtestes)
-      const lacunas = generateLacunas();
+      // ✅ AUTOMAÇÃO FINAL: Preencher TUDO que sobrou como 'não observado'
+      const finalScores = { ...scores };
+      let autoFilledCount = 0;
 
-      // Calcular estatísticas por domínio
+      domains.forEach(d => {
+        d.blocks?.forEach(b => {
+          if (!finalScores[b.block_id]) {
+            finalScores[b.block_id] = 'nao_observado';
+            autoFilledCount++;
+          }
+        });
+      });
+
+      // Gerar lacunas com os scores finais
+      const lacunas = [];
+      domains.forEach(domain => {
+        domain.blocks?.forEach(block => {
+          const status = finalScores[block.block_id];
+          if (status === 'emergente' || status === 'nao_observado') {
+            lacunas.push({
+              block_id: block.block_id,
+              domain_id: domain.domain_id,
+              domain_name: domain.domain_name,
+              level: block.level || 'N/A',
+              status: status,
+              texto: audience === 'professional' ? block.texto_profissional : block.texto_responsavel,
+              order: block.order || 0,
+              timestamp: new Date().toISOString()
+            });
+          }
+        });
+      });
+
+      // Calcular estatísticas por domínio (usando finalScores)
       const domainStats = {};
       domains.forEach(domain => {
         const domainScores = domain.blocks
-          ?.map(block => scores[block.block_id])
+          ?.map(block => finalScores[block.block_id])
           ?.filter(Boolean) || [];
 
         if (domainScores.length > 0) {
@@ -178,57 +265,58 @@ export default function MilestonesScreen({
         }
       });
 
-      // ✅ PAYLOAD COMPLETO para SessionController
+      // Determinar nível ativo clínico se estiver em 'Todos'
+      let derivedLevel = levelFilter === 'Todos' ? null : levelFilter.split(' ')[1];
+      if (!derivedLevel) {
+        // Fallback: Maior nível com pelo menos um item preenchido
+        const scoresKeys = Object.keys(finalScores);
+        if (scoresKeys.some(k => k.includes('-L3-'))) derivedLevel = '3';
+        else if (scoresKeys.some(k => k.includes('-L2-'))) derivedLevel = '2';
+        else derivedLevel = '1';
+      }
+
       const finalPayload = {
-        // Dados da criança
         child_name: childName.trim(),
-
-        // Snapshots dos dados
-        scores_snapshot: { ...scores },
+        scores_snapshot: finalScores,
         lacunas: lacunas,
-
-        // Estatísticas
+        active_level: derivedLevel,
         percentuais: {
           geral: {
-            dominado: progress.percentDominado,
-            emergente: progress.percentEmergente,
-            nao_observado: progress.percentNaoObservado,
-            total_preenchido: progress.percentComplete
+            dominado: ((Object.values(finalScores).filter(v => v === 'dominado').length / totalBlocks) * 100).toFixed(1),
+            emergente: ((Object.values(finalScores).filter(v => v === 'emergente').length / totalBlocks) * 100).toFixed(1),
+            nao_observado: ((Object.values(finalScores).filter(v => v === 'nao_observado').length / totalBlocks) * 100).toFixed(1)
           },
           por_dominio: domainStats
         },
-
-        // Metadados
+        audit_log: {
+          ...auditLog,
+          global_closure: {
+            action: 'finalized',
+            timestamp: new Date().toISOString(),
+            user: sessionInfo?.user_name || 'Profissional',
+            auto_filled: autoFilledCount
+          }
+        },
         last_updated: new Date().toISOString(),
-        assessment_duration: Math.round((Date.now() - new Date(sessionInfo?.date || Date.now()).getTime()) / 60000), // minutos
-
-        // Progresso
+        assessment_duration: Math.round((Date.now() - new Date(sessionInfo?.date || Date.now()).getTime()) / 60000),
         progress_summary: {
-          total_blocks: progress.totalBlocks,
-          filled_blocks: progress.filled,
+          total_blocks: totalBlocks,
+          filled_blocks: totalBlocks, // Agora é sempre total pois preenchemos o que falta
           lacunas_count: lacunas.length,
-          completion_percentage: progress.percentComplete
-        }
+          completion_percentage: '100.0'
+        },
+        milestones_completo: true, // ✅ CHAVE PARA O ECOICO FUNCIONAR
       };
 
-      console.log("📤 MilestonesScreen - Payload enviado:", {
-        lacunasCount: lacunas.length,
-        scoresCount: Object.keys(scores).length,
-        childName: childName.trim(),
-        hasDomainStats: Object.keys(domainStats).length > 0
-      });
-
-      // Enviar para SessionController
       onFinalize(finalPayload);
 
-      // Feedback visual
       setTimeout(() => {
-        alert(`✅ Milestones finalizados com sucesso!\n\n• ${progress.filled} blocos avaliados\n• ${lacunas.length} lacunas identificadas\n\nAvançando para Subtestes...`);
+        alert(`✅ Avaliação encerrada!\n\n• ${autoFilledCount} itens automáticos (não observados)\n• ${lacunas.length} lacunas identificadas`);
       }, 100);
 
     } catch (error) {
       console.error("❌ Erro ao finalizar milestones:", error);
-      alert("❌ Ocorreu um erro ao finalizar a avaliação. Tente novamente.");
+      alert("❌ Ocorreu um erro ao finalizar a avaliação.");
     } finally {
       setLoading(false);
     }
@@ -291,7 +379,7 @@ export default function MilestonesScreen({
               </span>
             )}
             <span className="session-progress">
-              Progresso: <strong>{progress.percentComplete}%</strong>
+              Progresso: <strong>{progress.context.percent}%</strong>
             </span>
           </div>
         </div>
@@ -376,7 +464,7 @@ export default function MilestonesScreen({
               ) : (
                 <>
                   <span className="finalize-icon">⏳</span>
-                  {progress.filled}/{progress.totalBlocks} blocos
+                  {progress.global.evaluated}/{progress.totalBlocks} avaliados
                 </>
               )}
             </button>
@@ -390,12 +478,12 @@ export default function MilestonesScreen({
         )}
       </section>
 
-      {/* RESUMO DE PROGRESSO */}
+      {/* RESUMO DE PROGRESSO (RELATIVO AO NÍVEL) */}
       <section className="progress-summary">
         <div className="summary-header">
-          <h2>Progresso da Avaliação</h2>
+          <h2>Progresso — {progress.context.name}</h2>
           <div className="progress-badge">
-            {progress.percentComplete}% completo
+            {progress.context.percent}% completo
           </div>
         </div>
 
@@ -403,30 +491,26 @@ export default function MilestonesScreen({
           <div className="progress-bar">
             <div
               className="progress-fill"
-              style={{ width: `${progress.percentComplete}%` }}
+              style={{ width: `${progress.context.percent}%` }}
               title={`${progress.filled} de ${progress.totalBlocks} blocos`}
             ></div>
           </div>
           <div className="progress-stats">
-            <div className="stat-item stat-dominado">
-              <div className="stat-value">{progress.dominado}</div>
-              <div className="stat-label">Dominado</div>
-              <div className="stat-percent">{progress.percentDominado}%</div>
+            <div className="stat-item stat-dominado" title="Itens com nota (Dominado/Emergente)">
+              <div className="stat-value">{progress.context.evaluated}</div>
+              <div className="stat-label">Avaliados</div>
             </div>
-            <div className="stat-item stat-emergente">
-              <div className="stat-value">{progress.emergente}</div>
-              <div className="stat-label">Emergente</div>
-              <div className="stat-percent">{progress.percentEmergente}%</div>
-            </div>
-            <div className="stat-item stat-nao-observado">
-              <div className="stat-value">{progress.naoObservado}</div>
+            <div className="stat-item stat-nao-observado" title="Itens marcados como não observados">
+              <div className="stat-value">{progress.context.notObserved}</div>
               <div className="stat-label">Não Obs.</div>
-              <div className="stat-percent">{progress.percentNaoObservado}%</div>
             </div>
-            <div className="stat-item stat-total">
-              <div className="stat-value">{progress.filled}/{progress.totalBlocks}</div>
-              <div className="stat-label">Total</div>
-              <div className="stat-percent">{progress.percentComplete}%</div>
+            <div className="stat-item stat-total" title="Itens sem nota no nível atual">
+              <div className="stat-value">{progress.totalBlocks - (progress.context.evaluated + progress.context.notObserved)}</div>
+              <div className="stat-label">Pendentes</div>
+            </div>
+            <div className="stat-item stat-total-context" title="Total de itens no contexto atual">
+              <div className="stat-value">{progress.totalBlocks}</div>
+              <div className="stat-label">Total do Nível</div>
             </div>
           </div>
         </div>
@@ -459,9 +543,25 @@ export default function MilestonesScreen({
             </button>
           ))}
         </div>
+
         {levelFilter !== 'Todos' && (
-          <div className="filter-info">
-            Mostrando apenas itens do <strong>{levelFilter}</strong>
+          <div className="phase-actions">
+            <div className="phase-counter">
+              Progresso do {levelFilter}: <strong>{progress.context.evaluated}/{progress.totalBlocks}</strong>
+            </div>
+            {!isReadOnly && progress.context.evaluated < progress.totalBlocks && (
+              <button
+                className="btn btn-close-phase"
+                onClick={() => handleCloseLevel(levelFilter.split(' ')[1])}
+                title="Encerrar esta fase e marcar itens restantes como não observados"
+              >
+                <span className="icon">🔒</span>
+                Encerrar {levelFilter}
+              </button>
+            )}
+            {auditLog[`nivel_${levelFilter.split(' ')[1]}`] && (
+              <span className="phase-badge-closed">✓ Fase Encerrada</span>
+            )}
           </div>
         )}
       </section>
@@ -512,6 +612,10 @@ export default function MilestonesScreen({
                       ? block.texto_profissional
                       : block.texto_responsavel;
 
+                    // ✅ LÓGICA: Só mostra botão de tarefas se NÃO for Dominado
+                    const hasTasks = !!TASK_ANALYSIS_MAP[block.block_id];
+                    const showTasks = hasTasks && currentScore && currentScore !== 'dominado';
+
                     return (
                       <div
                         key={block.block_id}
@@ -521,6 +625,11 @@ export default function MilestonesScreen({
                           <div className="block-meta">
                             <span className="block-id">{block.block_id}</span>
                             <span className="block-level">{block.level || 'N/A'}</span>
+                            {showTasks && (
+                              <button className="btn-task-trigger" onClick={() => setActiveTaskBlock(block.block_id)}>
+                                📋 Tarefas
+                              </button>
+                            )}
                           </div>
                           <div className="block-status">
                             {currentScore ? (
@@ -579,6 +688,32 @@ export default function MilestonesScreen({
         })}
       </div>
 
+      {/* ✅ GAVETA LATERAL INTEGRADA */}
+      {activeTaskBlock && (
+        <div className="task-drawer-overlay" onClick={() => setActiveTaskBlock(null)}>
+          <div className="task-drawer" onClick={e => e.stopPropagation()}>
+            <header className="drawer-header">
+              <div>
+                <h2>Análise de Tarefas</h2>
+                <p>O que falta no marco: <strong>{activeTaskBlock}</strong></p>
+              </div>
+              <button className="close-btn" onClick={() => setActiveTaskBlock(null)}>×</button>
+            </header>
+            <div className="drawer-body">
+              {TASK_ANALYSIS_MAP[activeTaskBlock]?.map((task, idx) => (
+                <div key={idx} className="task-row">
+                  <span className="task-badge">{task.id}</span>
+                  <p className="task-description">{task.text || task.texto}</p>
+                </div>
+              ))}
+            </div>
+            <footer className="drawer-footer">
+              <button className="btn-close-drawer" onClick={() => setActiveTaskBlock(null)}>Entendi</button>
+            </footer>
+          </div>
+        </div>
+      )}
+
       {/* RODAPÉ/DEBUG */}
       <footer className="milestones-footer">
         <div className="footer-content">
@@ -620,7 +755,7 @@ export default function MilestonesScreen({
   );
 }
 
-// ✅ ESTILOS COMPLETOS OTIMIZADOS
+// ✅ ESTILOS COMPLETOS COM GAVETA LATERAL
 function getMilestonesStyles() {
   return `
     /* CONTAINER PRINCIPAL */
@@ -1019,12 +1154,6 @@ function getMilestonesStyles() {
       margin-bottom: 6px;
     }
 
-    .stat-percent {
-      font-size: 18px;
-      font-weight: 700;
-      color: #334155;
-    }
-
     .lacunas-preview {
       margin-top: 25px;
       padding: 20px;
@@ -1211,6 +1340,26 @@ function getMilestonesStyles() {
       font-weight: 700;
       text-transform: uppercase;
     }
+    
+    .btn-task-trigger {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1d4ed8;
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      cursor: pointer;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+    
+    .btn-task-trigger:hover {
+      background: #dbeafe;
+      transform: translateY(-1px);
+    }
 
     .block-status {
       display: flex;
@@ -1331,6 +1480,131 @@ function getMilestonesStyles() {
       font-size: 13px;
     }
 
+    /* ✅ GAVETA LATERAL */
+    .task-drawer-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 9999;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .task-drawer {
+      width: 480px;
+      height: 100%;
+      background: white;
+      box-shadow: -10px 0 30px rgba(0,0,0,0.2);
+      display: flex;
+      flex-direction: column;
+      animation: slideIn 0.3s ease-out;
+    }
+    
+    @keyframes slideIn {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+
+    .drawer-header {
+      padding: 30px;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .drawer-header h2 {
+      margin: 0 0 8px 0;
+      color: #1e293b;
+      font-size: 22px;
+    }
+    
+    .drawer-header p {
+      margin: 0;
+      color: #64748b;
+      font-size: 14px;
+    }
+    
+    .close-btn {
+      background: #f1f5f9;
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      font-size: 24px;
+      color: #64748b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    
+    .close-btn:hover {
+      background: #e2e8f0;
+      color: #1e293b;
+    }
+
+    .drawer-body {
+      padding: 25px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    
+    .task-row {
+      display: flex;
+      gap: 15px;
+      padding: 15px;
+      border-bottom: 1px solid #f8fafc;
+      align-items: flex-start;
+    }
+    
+    .task-badge {
+      background: #e0e7ff;
+      color: #4338ca;
+      font-weight: bold;
+      padding: 3px 8px;
+      border-radius: 5px;
+      font-size: 11px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    
+    .task-description {
+      margin: 0;
+      color: #334155;
+      font-size: 14px;
+      line-height: 1.5;
+      flex: 1;
+    }
+
+    .drawer-footer {
+      padding: 20px 30px;
+      border-top: 1px solid #f1f5f9;
+    }
+    
+    .btn-close-drawer {
+      width: 100%;
+      background: #4f46e5;
+      color: white;
+      padding: 14px;
+      border-radius: 10px;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 15px;
+      transition: all 0.2s;
+    }
+    
+    .btn-close-drawer:hover {
+      background: #4338ca;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+    }
+
     /* ESTADO SEM DADOS */
     .no-data-state {
       text-align: center;
@@ -1428,6 +1702,113 @@ function getMilestonesStyles() {
       text-align: center;
     }
 
+    /* FILTRO DE NÍVEL */
+    .level-filter-bar {
+      background: white;
+      padding: 20px 32px;
+      border-radius: 16px;
+      margin-bottom: 30px;
+      border: 2px solid #e2e8f0;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04);
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .filter-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filter-icon {
+      font-size: 18px;
+    }
+
+    .filter-options {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      background: #f1f5f9;
+      color: #64748b;
+      border: 2px solid #e2e8f0;
+      padding: 10px 24px;
+      min-width: 100px;
+    }
+
+    .filter-btn:hover {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+    }
+
+    .filter-btn.active {
+      background: #4f46e5;
+      color: white;
+      border-color: #4f46e5;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+    }
+
+    .phase-actions {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      background: #f8fafc;
+      padding: 8px 16px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .phase-counter {
+      font-size: 14px;
+      color: #475569;
+    }
+
+    .phase-counter strong {
+      color: #4f46e5;
+      font-size: 16px;
+    }
+
+    .btn-close-phase {
+      background: #fff;
+      border: 2px solid #ef4444;
+      color: #ef4444;
+      padding: 6px 14px;
+      font-size: 13px;
+      border-radius: 8px;
+      font-weight: 700;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-close-phase:hover {
+      background: #ef4444;
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 6px rgba(239, 68, 68, 0.2);
+    }
+
+    .phase-badge-closed {
+      background: #d1fae5;
+      color: #065f46;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid #a7f3d0;
+    }
+
     /* RESPONSIVIDADE */
     @media (max-width: 768px) {
       .milestones-screen {
@@ -1486,6 +1867,26 @@ function getMilestonesStyles() {
       .domain-stats {
         justify-content: center;
       }
+      
+      .task-drawer {
+        width: 100%;
+      }
+      
+      .level-filter-bar {
+        padding: 20px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+      }
+      
+      .phase-actions {
+        margin-left: 0;
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+        gap: 10px;
+      }
 
       .footer-content {
         flex-direction: column;
@@ -1505,86 +1906,6 @@ function getMilestonesStyles() {
 
     .block-card {
       animation: fadeIn 0.3s ease-out;
-    }
-
-    /* FILTRO DE NÍVEL */
-    .level-filter-bar {
-      background: white;
-      padding: 20px 32px;
-      border-radius: 16px;
-      margin-bottom: 30px;
-      border: 2px solid #e2e8f0;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04);
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-
-    .filter-label {
-      font-size: 14px;
-      font-weight: 700;
-      color: #475569;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .filter-icon {
-      font-size: 18px;
-    }
-
-    .filter-options {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .filter-btn {
-      background: #f1f5f9;
-      color: #64748b;
-      border: 2px solid #e2e8f0;
-      padding: 10px 24px;
-      min-width: 100px;
-    }
-
-    .filter-btn:hover {
-      background: #e2e8f0;
-      border-color: #cbd5e1;
-    }
-
-    .filter-btn.active {
-      background: #4f46e5;
-      color: white;
-      border-color: #4f46e5;
-      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
-    }
-
-    .filter-info {
-      margin-left: auto;
-      font-size: 14px;
-      color: #64748b;
-      background: #f8fafc;
-      padding: 8px 16px;
-      border-radius: 8px;
-      border: 1px solid #e2e8f0;
-    }
-
-    @media (max-width: 768px) {
-      .level-filter-bar {
-        padding: 20px;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 15px;
-      }
-      
-      .filter-info {
-        margin-left: 0;
-        width: 100%;
-        text-align: center;
-      }
     }
   `;
 }

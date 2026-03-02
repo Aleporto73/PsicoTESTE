@@ -1,904 +1,1022 @@
 import React, { useState, useMemo } from 'react';
+import { TASK_ANALYSIS_MAP_BY_LEVEL } from './taskAnalysisData';
 
-/* COMPONENTE: TELA 5 — PEI (Plano Educacional Individualizado) */
-export default function PEIScreen({ sessionInfo, onFinalize, onBack, isReadOnly }) {
-  // Inicializar com áreas da sessão ou 1 área vazia
-  const [areas, setAreas] = useState(() => {
-    if (sessionInfo?.pei?.areas) {
-      return sessionInfo.pei.areas.map((a, idx) => ({
-        area_id: `area_${idx}_${Date.now()}`,
-        area: a.area,
-        objetivo_geral: a.objetivo_geral,
-        metas: a.metas.map(m => ({ meta: m.meta, criterio_sucesso: m.criterio_sucesso })),
-        estrategias: a.estrategias,
-        responsavel: a.responsavel,
-        data_revisao: a.data_revisao
-      }));
-    }
-    return [
-      {
-        area_id: Date.now().toString(),
-        area: '',
-        objetivo_geral: '',
-        metas: [{ meta: '', criterio_sucesso: '' }],
-        estrategias: '',
-        responsavel: '',
-        data_revisao: ''
-      }
-    ];
-  });
+/*
+  📝 PEI SCREEN - CORRIGIDO v2
+  
+  Funcionalidades:
+  1. Filtra lacunas pelo nível ativo (active_level da sessão)
+  2. Usa textos detalhados do Task Analysis (não genéricos)
+  3. Permite selecionar tarefas específicas para o PEI
+  4. Agrupa por domínio para melhor organização
+  
+  CORREÇÃO: Mapeamento de domínios alinhado com TASK_ANALYSIS_MAP_BY_LEVEL
+*/
 
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [errors, setErrors] = useState({});
+export default function PEIScreen({
+  sessionInfo,
+  onFinalize,
+  onBack,
+  isReadOnly = false
+}) {
+  // Estado para metas selecionadas
+  const [metasSelecionadas, setMetasSelecionadas] = useState([]);
+  const [expandedMilestones, setExpandedMilestones] = useState({});
 
-  // ✅ EXTRAIR DADOS COM FALLBACK SEGURO
-  const dadosConsolidados = useMemo(() => {
-    // Calcular percentuais a partir dos scores se não existir
-    let percentuais = sessionInfo?.percentuais?.geral || null;
-
-    if (!percentuais && sessionInfo?.scores_snapshot) {
-      const scores = sessionInfo.scores_snapshot;
-      const total = Object.keys(scores).length || 1;
-      const dominados = Object.values(scores).filter(s => s === 'dominado').length;
-      const emergentes = Object.values(scores).filter(s => s === 'emergente').length;
-      const naoObs = Object.values(scores).filter(s => s === 'nao_observado').length;
-
-      percentuais = {
-        dominado: (dominados / total) * 100,
-        emergente: (emergentes / total) * 100,
-        nao_observado: (naoObs / total) * 100
-      };
+  // ═══════════════════════════════════════════════════════════════
+  // EXTRAIR NÍVEL DA CRIANÇA
+  // ═══════════════════════════════════════════════════════════════
+  const nivelCrianca = useMemo(() => {
+    // Prioridade 1: active_level definido na sessão
+    if (sessionInfo?.active_level) {
+      return parseInt(sessionInfo.active_level);
     }
 
-    // Fallback final
-    if (!percentuais) {
-      percentuais = { dominado: 0, emergente: 0, nao_observado: 0 };
+    // Prioridade 2: Extrair do nome da criança (ex: "JAmanta Nivel 1")
+    const childName = sessionInfo?.child_name || '';
+    const match = childName.match(/[Nn]ivel\s*(\d)/i);
+    if (match) {
+      return parseInt(match[1]);
     }
 
-    return {
-      percentuais,
-      escoreBarreiras: sessionInfo?.escore_total_barreiras || 0,
-      escoreTransicao: sessionInfo?.transicao?.escore_total || 0,
-      lacunas: sessionInfo?.lacunas || []
-    };
+    // Prioridade 3: Inferir do maior nível com scores
+    const scores = sessionInfo?.scores_snapshot || {};
+    const scoreKeys = Object.keys(scores);
+
+    if (scoreKeys.some(k => k.includes('-L3-'))) return 3;
+    if (scoreKeys.some(k => k.includes('-L2-'))) return 2;
+    return 1;
   }, [sessionInfo]);
 
-  // ✅ HELPER PARA FORMATAR NÚMERO SEGURO
-  const formatNumber = (value, decimals = 1) => {
-    const num = Number(value);
-    if (isNaN(num)) return '0';
-    return num.toFixed(decimals);
+  // ═══════════════════════════════════════════════════════════════
+  // MAPEAMENTO DE DOMÍNIOS - CORRIGIDO
+  // Chaves correspondem EXATAMENTE às do TASK_ANALYSIS_MAP_BY_LEVEL
+  // ═══════════════════════════════════════════════════════════════
+
+  // Função para obter a chave correta do Task Analysis baseado no domínio e nível
+  const getDomainKeyForTaskAnalysis = (domCode, level) => {
+    // Mapeamento DOM -> chave do TASK_ANALYSIS_MAP_BY_LEVEL
+    const baseMap = {
+      'DOM01': 'MANDO',
+      'DOM02': 'TATO',
+      'DOM03': 'OUVINTE',
+      'DOM04': 'HABILIDADES PERCEPTUAIS VISUAIS E PAREAMENTO AO MODELO',
+      'DOM05': 'BRINCAR INDEPENDENTE',
+      'DOM06': 'COMPORTAMENTO SOCIAL E BRINCAR SOCIAL',
+      'DOM07': 'IMITAÇÃO',
+      'DOM08': 'COMPORTAMENTO VOCAL ESPONTÂNEO',
+      'DOM09': 'COMPORTAMENTO VOCAL ESPONTÂNEO',
+      'DOM10': 'RESPOSTA DE OUVINTE POR FUNÇÃO, CARACTERÍSTICA E CLASSE',
+      'DOM11': 'INTRAVERBAL',
+      'DOM12': 'ROTINAS DE CLASSE E HABILIDADES DE GRUPO',
+      'DOM13': 'ESTRUTURA LINGUÍSTICA',
+      'DOM14': 'LEITURA',
+      'DOM15': 'ESCRITA',
+      'DOM16': 'MATEMÁTICA'
+    };
+
+    return baseMap[domCode] || domCode;
   };
 
-  // Adicionar nova área
-  const adicionarArea = () => {
-    setAreas([...areas, {
-      area_id: Date.now().toString(),
-      area: '',
-      objetivo_geral: '',
-      metas: [{ meta: '', criterio_sucesso: '' }],
-      estrategias: '',
-      responsavel: '',
-      data_revisao: ''
-    }]);
+  // Nomes amigáveis para exibição
+  const DOMAIN_NAMES_PT = {
+    'DOM01': 'Mando',
+    'DOM02': 'Tato',
+    'DOM03': 'Ouvinte',
+    'DOM04': 'Percepção Visual / MTS',
+    'DOM05': 'Brincar Independente',
+    'DOM06': 'Social / Brincar Social',
+    'DOM07': 'Imitação',
+    'DOM08': 'Ecoico',
+    'DOM09': 'Vocal Espontâneo',
+    'DOM10': 'ROFCC',
+    'DOM11': 'Intraverbal',
+    'DOM12': 'Rotina de Grupo',
+    'DOM13': 'Estrutura Linguística',
+    'DOM14': 'Leitura',
+    'DOM15': 'Escrita',
+    'DOM16': 'Matemática'
   };
 
-  // Remover área
-  const removerArea = (areaId) => {
-    if (areas.length === 1) {
-      alert('É necessário ter pelo menos uma área no PEI.');
-      return;
-    }
-    if (window.confirm('Deseja realmente remover esta área?')) {
-      setAreas(areas.filter(a => a.area_id !== areaId));
-    }
-  };
+  // ═══════════════════════════════════════════════════════════════
+  // PROCESSAR LACUNAS DO NÍVEL ATUAL
+  // ═══════════════════════════════════════════════════════════════
+  const lacunasPorDominio = useMemo(() => {
+    const scores = sessionInfo?.scores_snapshot || {};
+    const lacunasFromSession = sessionInfo?.lacunas || [];
 
-  // Atualizar campo da área
-  const atualizarArea = (areaId, campo, valor) => {
-    if (isReadOnly) return;
-    setAreas(areas.map(a =>
-      a.area_id === areaId ? { ...a, [campo]: valor } : a
-    ));
-  };
+    // Objeto para agrupar lacunas por domínio
+    const porDominio = {};
 
-  // Adicionar meta
-  const adicionarMeta = (areaId) => {
-    setAreas(areas.map(a =>
-      a.area_id === areaId
-        ? { ...a, metas: [...a.metas, { meta: '', criterio_sucesso: '' }] }
-        : a
-    ));
-  };
+    // Debug: mostrar chaves disponíveis no TASK_ANALYSIS_MAP
+    const taskMapForLevel = TASK_ANALYSIS_MAP_BY_LEVEL[nivelCrianca] || {};
+    console.log(`📊 PEI - Nível ${nivelCrianca} - Chaves disponíveis:`, Object.keys(taskMapForLevel));
 
-  // Remover meta
-  const removerMeta = (areaId, metaIndex) => {
-    setAreas(areas.map(a => {
-      if (a.area_id === areaId) {
-        if (a.metas.length === 1) {
-          alert('É necessário ter pelo menos uma meta por área.');
-          return a;
-        }
-        return { ...a, metas: a.metas.filter((_, i) => i !== metaIndex) };
+    // Filtrar lacunas do nível atual
+    Object.entries(scores).forEach(([blockId, status]) => {
+      // Só processa se não for dominado
+      if (status === 'dominado') return;
+
+      // Extrair informações do blockId (ex: DOM01-L1-M01 ou DOM01-L1-M5)
+      const match = blockId.match(/^(DOM\d+)-L(\d+)-M(\d+)$/);
+      if (!match) return;
+
+      const [, domCode, levelStr, milestoneStr] = match;
+      const levelNum = parseInt(levelStr);
+      const milestoneNum = parseInt(milestoneStr);
+
+      // ✅ FILTRO CRÍTICO: Só inclui se for do nível da criança
+      if (levelNum !== nivelCrianca) return;
+
+      // Buscar Task Analysis para este domínio
+      const domainKey = getDomainKeyForTaskAnalysis(domCode, nivelCrianca);
+      const taskAnalysis = taskMapForLevel[domainKey] || [];
+
+      // Debug para cada domínio
+      if (taskAnalysis.length === 0) {
+        console.log(`⚠️ Sem tasks para ${domCode} (chave: "${domainKey}") no nível ${nivelCrianca}`);
       }
-      return a;
+
+      // Filtrar tarefas do milestone específico
+      const tarefasDoMilestone = taskAnalysis.filter(task => {
+        if (!task.id) return false;
+        const taskMilestone = parseInt(task.id.split('-')[0]);
+        return taskMilestone === milestoneNum;
+      });
+
+      // Criar entrada no domínio se não existir
+      if (!porDominio[domCode]) {
+        porDominio[domCode] = {
+          domainCode: domCode,
+          domainName: DOMAIN_NAMES_PT[domCode] || domCode,
+          domainKey: domainKey, // Para debug
+          milestones: []
+        };
+      }
+
+      // Buscar texto original da lacuna
+      const lacunaOriginal = lacunasFromSession.find(l => l.block_id === blockId);
+
+      // Adicionar milestone com suas tarefas
+      porDominio[domCode].milestones.push({
+        blockId,
+        milestoneNum,
+        level: levelNum,
+        status,
+        textoOriginal: lacunaOriginal?.texto || `${milestoneNum}-M - ${DOMAIN_NAMES_PT[domCode]}`,
+        tarefas: tarefasDoMilestone.map(t => ({
+          id: t.id,
+          texto: t.texto || t.text,
+          selecionada: false
+        }))
+      });
+    });
+
+    // Ordenar milestones dentro de cada domínio
+    Object.values(porDominio).forEach(domain => {
+      domain.milestones.sort((a, b) => a.milestoneNum - b.milestoneNum);
+    });
+
+    console.log(`📋 PEI - Domínios com lacunas:`, Object.keys(porDominio));
+
+    return porDominio;
+  }, [sessionInfo, nivelCrianca]);
+
+  // ═══════════════════════════════════════════════════════════════
+  // ESTATÍSTICAS DO NÍVEL
+  // ═══════════════════════════════════════════════════════════════
+  const estatisticas = useMemo(() => {
+    const scores = sessionInfo?.scores_snapshot || {};
+
+    // Filtrar apenas scores do nível atual
+    const scoresDoNivel = Object.entries(scores).filter(([blockId]) => {
+      const match = blockId.match(/-L(\d+)-/);
+      return match && parseInt(match[1]) === nivelCrianca;
+    });
+
+    const total = scoresDoNivel.length;
+    const dominados = scoresDoNivel.filter(([, s]) => s === 'dominado').length;
+    const emergentes = scoresDoNivel.filter(([, s]) => s === 'emergente').length;
+    const naoObservados = scoresDoNivel.filter(([, s]) => s === 'nao_observado').length;
+
+    const totalLacunas = Object.values(lacunasPorDominio).reduce(
+      (acc, d) => acc + d.milestones.length, 0
+    );
+
+    const totalTarefas = Object.values(lacunasPorDominio).reduce(
+      (acc, d) => acc + d.milestones.reduce((a, m) => a + m.tarefas.length, 0), 0
+    );
+
+    return {
+      total,
+      dominados,
+      emergentes,
+      naoObservados,
+      percentDominado: total > 0 ? ((dominados / total) * 100).toFixed(1) : '0.0',
+      totalLacunas,
+      totalTarefas
+    };
+  }, [sessionInfo, nivelCrianca, lacunasPorDominio]);
+
+  // ═══════════════════════════════════════════════════════════════
+  // HANDLERS
+  // ═══════════════════════════════════════════════════════════════
+  const toggleMilestone = (blockId) => {
+    setExpandedMilestones(prev => ({
+      ...prev,
+      [blockId]: !prev[blockId]
     }));
   };
 
-  // Atualizar meta
-  const atualizarMeta = (areaId, metaIndex, campo, valor) => {
+  const toggleTarefa = (blockId, tarefaId) => {
     if (isReadOnly) return;
-    setAreas(areas.map(a =>
-      a.area_id === areaId
-        ? {
-          ...a,
-          metas: a.metas.map((m, i) =>
-            i === metaIndex ? { ...m, [campo]: valor } : m
-          )
-        }
-        : a
-    ));
+
+    const key = `${blockId}::${tarefaId}`;
+    setMetasSelecionadas(prev =>
+      prev.includes(key)
+        ? prev.filter(k => k !== key)
+        : [...prev, key]
+    );
   };
 
-  // Validar PEI
-  const validarPEI = () => {
-    const novosErros = {};
-    let valido = true;
+  const selecionarTodasTarefas = (blockId, tarefas) => {
+    if (isReadOnly) return;
 
-    areas.forEach((area, index) => {
-      const areaErros = {};
+    const keys = tarefas.map(t => `${blockId}::${t.id}`);
+    const todasSelecionadas = keys.every(k => metasSelecionadas.includes(k));
 
-      // Validar área
-      if (!area.area || area.area.trim().length < 3) {
-        areaErros.area = 'Área deve ter pelo menos 3 caracteres';
-        valido = false;
-      }
-
-      // Validar objetivo geral
-      if (!area.objetivo_geral || area.objetivo_geral.trim().length < 20) {
-        areaErros.objetivo_geral = 'Objetivo geral deve ter pelo menos 20 caracteres';
-        valido = false;
-      }
-
-      // Validar metas
-      area.metas.forEach((meta, metaIndex) => {
-        if (!meta.meta || meta.meta.trim().length < 5) {
-          areaErros[`meta_${metaIndex}`] = 'Meta deve ter pelo menos 5 caracteres';
-          valido = false;
-        }
-        if (!meta.criterio_sucesso || meta.criterio_sucesso.trim().length < 5) {
-          areaErros[`criterio_${metaIndex}`] = 'Critério de sucesso deve ter pelo menos 5 caracteres';
-          valido = false;
-        }
-      });
-
-      // Validar estratégias
-      if (!area.estrategias || area.estrategias.trim().length < 20) {
-        areaErros.estrategias = 'Estratégias devem ter pelo menos 20 caracteres';
-        valido = false;
-      }
-
-      // Validar responsável
-      if (!area.responsavel || area.responsavel.trim().length < 3) {
-        areaErros.responsavel = 'Responsável deve ter pelo menos 3 caracteres';
-        valido = false;
-      }
-
-      // Validar data de revisão
-      if (!area.data_revisao) {
-        areaErros.data_revisao = 'Data de revisão é obrigatória';
-        valido = false;
-      } else {
-        const dataRevisao = new Date(area.data_revisao);
-        const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0);
-        if (dataRevisao < hoje) {
-          areaErros.data_revisao = 'Data de revisão deve ser futura';
-          valido = false;
-        }
-      }
-
-      if (Object.keys(areaErros).length > 0) {
-        novosErros[`area_${index}`] = areaErros;
-      }
-    });
-
-    setErrors(novosErros);
-    return valido;
-  };
-
-  // Tentar finalizar
-  const tentarFinalizar = () => {
-    if (validarPEI()) {
-      setShowConfirmModal(true);
+    if (todasSelecionadas) {
+      setMetasSelecionadas(prev => prev.filter(k => !keys.includes(k)));
     } else {
-      alert('Por favor, corrija os erros destacados antes de finalizar o PEI.');
+      setMetasSelecionadas(prev => [...new Set([...prev, ...keys])]);
     }
   };
 
-  // Confirmar e finalizar
-  const confirmarFinalizar = () => {
-    const peiData = {
-      session_id: sessionInfo.session_id,
-      child_name: sessionInfo.child_name,
-      date_pei: new Date().toISOString(),
-      pei_completo: true,
-      pei: {
-        areas: areas.map(a => ({
-          area: a.area.trim(),
-          objetivo_geral: a.objetivo_geral.trim(),
-          metas: a.metas.map(m => ({
-            meta: m.meta.trim(),
-            criterio_sucesso: m.criterio_sucesso.trim()
-          })),
-          estrategias: a.estrategias.trim(),
-          responsavel: a.responsavel.trim(),
-          data_revisao: a.data_revisao
-        }))
-      },
-      schema_version: 'vbmapp_pei_v1'
+  const handleFinalize = () => {
+    // Preparar metas para o payload
+    const metasFormatadas = metasSelecionadas.map(key => {
+      const [blockId, tarefaId] = key.split('::');
+
+      // Encontrar a tarefa
+      for (const domain of Object.values(lacunasPorDominio)) {
+        for (const milestone of domain.milestones) {
+          if (milestone.blockId === blockId) {
+            const tarefa = milestone.tarefas.find(t => t.id === tarefaId);
+            if (tarefa) {
+              return {
+                blockId,
+                tarefaId,
+                dominio: domain.domainName,
+                milestone: milestone.milestoneNum,
+                texto: tarefa.texto,
+                nivel: nivelCrianca
+              };
+            }
+          }
+        }
+      }
+      return null;
+    }).filter(Boolean);
+
+    const payload = {
+      pei_metas: metasFormatadas,
+      pei_total_metas: metasFormatadas.length,
+      pei_nivel: nivelCrianca,
+      pei_timestamp: new Date().toISOString()
     };
 
-    onFinalize(peiData);
+    console.log("📝 PEI finalizado:", payload);
+    onFinalize(payload);
   };
+
+  // ═══════════════════════════════════════════════════════════════
+  // RENDER
+  // ═══════════════════════════════════════════════════════════════
+  const dominiosComLacunas = Object.values(lacunasPorDominio).filter(d => d.milestones.length > 0);
 
   return (
     <div className="pei-screen">
-      <style>{getPEIStyles()}</style>
+      <style>{getStyles()}</style>
 
       {/* HEADER */}
       <header className="pei-header">
         <div className="header-content">
-          <h1>TELA 5 — PEI</h1>
-          <p>Plano Educacional Individualizado</p>
-          <div className="session-info">
-            <strong>{sessionInfo?.child_name || 'Criança'}</strong>
+          <h1>📝 Plano Educacional Individualizado</h1>
+          <p>Seleção de Metas para Intervenção (Tela 5/5)</p>
+          <div className="header-badges">
+            <span className="badge-child">
+              {sessionInfo?.child_name || 'Criança'}
+            </span>
+            <span className="badge-level">
+              Nível {nivelCrianca}
+            </span>
+            {isReadOnly && (
+              <span className="badge-readonly">🔒 Somente Leitura</span>
+            )}
           </div>
         </div>
-        {onBack && (
-          <button className="btn btn-back" onClick={onBack}>
-            ← Voltar
-          </button>
-        )}
+        <button className="btn-back" onClick={onBack}>
+          ← Voltar
+        </button>
       </header>
 
-      {/* DADOS CONSOLIDADOS */}
-      <section className="dados-consolidados">
-        <h2>📊 Dados Consolidados</h2>
-        <div className="info-grid">
-          <div className="info-item">
-            <span className="info-label">Milestones Dominados:</span>
-            <span className="info-value">{formatNumber(dadosConsolidados.percentuais.dominado)}%</span>
+      {/* RESUMO ESTATÍSTICO */}
+      <section className="stats-section">
+        <h2>📊 Consolidado - Nível {nivelCrianca}</h2>
+        <div className="stats-grid">
+          <div className="stat-card verde">
+            <span className="stat-numero">{estatisticas.percentDominado}%</span>
+            <span className="stat-label">Dominados</span>
+            <span className="stat-detalhe">{estatisticas.dominados} de {estatisticas.total}</span>
           </div>
-          <div className="info-item">
-            <span className="info-label">Lacunas Identificadas:</span>
-            <span className="info-value">{dadosConsolidados.lacunas.length}</span>
+          <div className="stat-card amarelo">
+            <span className="stat-numero">{estatisticas.emergentes}</span>
+            <span className="stat-label">Emergentes</span>
           </div>
-          <div className="info-item">
-            <span className="info-label">Escore de Barreiras:</span>
-            <span className="info-value">{dadosConsolidados.escoreBarreiras} / 40</span>
+          <div className="stat-card cinza">
+            <span className="stat-numero">{estatisticas.naoObservados}</span>
+            <span className="stat-label">Não Observados</span>
           </div>
-          <div className="info-item">
-            <span className="info-label">Escore de Transição:</span>
-            <span className="info-value">{dadosConsolidados.escoreTransicao}</span>
+          <div className="stat-card roxo">
+            <span className="stat-numero">{estatisticas.totalLacunas}</span>
+            <span className="stat-label">Lacunas</span>
+            <span className="stat-detalhe">{estatisticas.totalTarefas} tarefas disponíveis</span>
           </div>
         </div>
       </section>
 
-      {/* ÁREAS DO PEI */}
-      <div className="areas-container">
-        {areas.map((area, areaIndex) => {
-          const areaErros = errors[`area_${areaIndex}`] || {};
+      {/* SELEÇÃO DE METAS */}
+      <section className="metas-section">
+        <div className="metas-header">
+          <h2>📋 Lacunas do Nível {nivelCrianca} ({estatisticas.totalLacunas} milestones)</h2>
+          <div className="metas-counter">
+            <span className="counter-numero">{metasSelecionadas.length}</span>
+            <span className="counter-label">metas selecionadas</span>
+          </div>
+        </div>
 
-          return (
-            <article key={area.area_id} className="area-card">
-              <div className="area-header">
-                <h3>Área {areaIndex + 1}</h3>
-                {areas.length > 1 && !isReadOnly && (
-                  <button
-                    className="btn btn-remove-small"
-                    onClick={() => removerArea(area.area_id)}
-                    title="Remover área"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
+        {dominiosComLacunas.length === 0 ? (
+          <div className="empty-state">
+            <span className="empty-icon">🎉</span>
+            <h3>Parabéns!</h3>
+            <p>Não há lacunas identificadas no Nível {nivelCrianca}.</p>
+            <p>A criança dominou todas as habilidades deste nível!</p>
+          </div>
+        ) : (
+          <div className="dominios-lista">
+            {dominiosComLacunas.map(domain => (
+              <div key={domain.domainCode} className="dominio-card">
+                <div className="dominio-header">
+                  <h3>
+                    <span className="dominio-icon">📁</span>
+                    {domain.domainName}
+                  </h3>
+                  <span className="dominio-count">
+                    {domain.milestones.length} lacuna{domain.milestones.length > 1 ? 's' : ''}
+                  </span>
+                </div>
 
-              {/* ÁREA / DOMÍNIO */}
-              <div className="form-group">
-                <label className="form-label">Área / Domínio *</label>
-                <input
-                  type="text"
-                  className={`form-input ${areaErros.area ? 'error' : ''}`}
-                  placeholder="Ex: Comunicação Expressiva, Habilidades Sociais, Independência..."
-                  value={area.area}
-                  onChange={(e) => atualizarArea(area.area_id, 'area', e.target.value)}
-                  disabled={isReadOnly}
-                />
-                {areaErros.area && <div className="field-error">{areaErros.area}</div>}
-              </div>
+                <div className="milestones-lista">
+                  {domain.milestones.map(milestone => {
+                    const isExpanded = expandedMilestones[milestone.blockId];
+                    const tarefasSelecionadas = milestone.tarefas.filter(t =>
+                      metasSelecionadas.includes(`${milestone.blockId}::${t.id}`)
+                    ).length;
 
-              {/* OBJETIVO GERAL */}
-              <div className="form-group">
-                <label className="form-label">Objetivo Geral *</label>
-                <textarea
-                  className={`form-textarea ${areaErros.objetivo_geral ? 'error' : ''}`}
-                  placeholder="Descreva o objetivo geral desta área de intervenção..."
-                  value={area.objetivo_geral}
-                  onChange={(e) => atualizarArea(area.area_id, 'objetivo_geral', e.target.value)}
-                  rows={3}
-                  disabled={isReadOnly}
-                />
-                {areaErros.objetivo_geral && <div className="field-error">{areaErros.objetivo_geral}</div>}
-              </div>
+                    return (
+                      <div key={milestone.blockId} className="milestone-item">
+                        <div
+                          className="milestone-header"
+                          onClick={() => toggleMilestone(milestone.blockId)}
+                        >
+                          <div className="milestone-info">
+                            <span className={`milestone-status ${milestone.status}`}>
+                              {milestone.status === 'emergente' ? '◐' : '○'}
+                            </span>
+                            <span className="milestone-id">{milestone.milestoneNum}-M</span>
+                            <span className="milestone-texto">{milestone.textoOriginal}</span>
+                          </div>
+                          <div className="milestone-actions">
+                            {milestone.tarefas.length > 0 && (
+                              <span className="tarefas-badge">
+                                {tarefasSelecionadas}/{milestone.tarefas.length}
+                              </span>
+                            )}
+                            <span className="expand-icon">
+                              {isExpanded ? '▼' : '▶'}
+                            </span>
+                          </div>
+                        </div>
 
-              {/* METAS ESPECÍFICAS */}
-              <div className="metas-section">
-                <h4>Metas Específicas *</h4>
-                {area.metas.map((meta, metaIndex) => (
-                  <div key={metaIndex} className="meta-row">
-                    <div className="meta-number">Meta {metaIndex + 1}</div>
-                    <div className="meta-fields">
-                      <div className="form-group">
-                        <label className="form-label-small">Meta *</label>
-                        <input
-                          type="text"
-                          className={`form-input ${areaErros[`meta_${metaIndex}`] ? 'error' : ''}`}
-                          placeholder="Descreva a meta específica..."
-                          value={meta.meta}
-                          onChange={(e) => atualizarMeta(area.area_id, metaIndex, 'meta', e.target.value)}
-                          disabled={isReadOnly}
-                        />
-                        {areaErros[`meta_${metaIndex}`] && (
-                          <div className="field-error">{areaErros[`meta_${metaIndex}`]}</div>
+                        {isExpanded && milestone.tarefas.length > 0 && (
+                          <div className="tarefas-lista">
+                            <div className="tarefas-header">
+                              <span>Análise de Tarefas:</span>
+                              <button
+                                className="btn-selecionar-todas"
+                                onClick={() => selecionarTodasTarefas(milestone.blockId, milestone.tarefas)}
+                                disabled={isReadOnly}
+                              >
+                                {milestone.tarefas.every(t =>
+                                  metasSelecionadas.includes(`${milestone.blockId}::${t.id}`)
+                                ) ? '✓ Desmarcar todas' : '☐ Selecionar todas'}
+                              </button>
+                            </div>
+
+                            {milestone.tarefas.map(tarefa => {
+                              const isSelected = metasSelecionadas.includes(`${milestone.blockId}::${tarefa.id}`);
+
+                              return (
+                                <div
+                                  key={tarefa.id}
+                                  className={`tarefa-item ${isSelected ? 'selecionada' : ''}`}
+                                  onClick={() => toggleTarefa(milestone.blockId, tarefa.id)}
+                                >
+                                  <span className="tarefa-checkbox">
+                                    {isSelected ? '☑' : '☐'}
+                                  </span>
+                                  <span className="tarefa-id">[{tarefa.id}]</span>
+                                  <span className="tarefa-texto">{tarefa.texto}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {isExpanded && milestone.tarefas.length === 0 && (
+                          <div className="sem-tarefas">
+                            <em>Análise de tarefas não disponível para este milestone.</em>
+                          </div>
                         )}
                       </div>
-                      <div className="form-group">
-                        <label className="form-label-small">Critério de Sucesso *</label>
-                        <input
-                          type="text"
-                          className={`form-input ${areaErros[`criterio_${metaIndex}`] ? 'error' : ''}`}
-                          placeholder="Ex: 80% de acertos em 3 sessões consecutivas..."
-                          value={meta.criterio_sucesso}
-                          onChange={(e) => atualizarMeta(area.area_id, metaIndex, 'criterio_sucesso', e.target.value)}
-                          disabled={isReadOnly}
-                        />
-                        {areaErros[`criterio_${metaIndex}`] && (
-                          <div className="field-error">{areaErros[`criterio_${metaIndex}`]}</div>
-                        )}
-                      </div>
-                    </div>
-                    {area.metas.length > 1 && !isReadOnly && (
-                      <button
-                        className="btn btn-remove-small"
-                        onClick={() => removerMeta(area.area_id, metaIndex)}
-                        title="Remover meta"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                ))}
-                {!isReadOnly && (
-                  <button
-                    className="btn btn-add"
-                    onClick={() => adicionarMeta(area.area_id)}
-                  >
-                    + Adicionar Meta
-                  </button>
-                )}
-              </div>
-
-              {/* ESTRATÉGIAS / PROCEDIMENTOS */}
-              <div className="form-group">
-                <label className="form-label">Estratégias / Procedimentos *</label>
-                <textarea
-                  className={`form-textarea ${areaErros.estrategias ? 'error' : ''}`}
-                  placeholder="Descreva as estratégias e procedimentos que serão utilizados..."
-                  value={area.estrategias}
-                  onChange={(e) => atualizarArea(area.area_id, 'estrategias', e.target.value)}
-                  rows={4}
-                  disabled={isReadOnly}
-                />
-                {areaErros.estrategias && <div className="field-error">{areaErros.estrategias}</div>}
-              </div>
-
-              {/* RESPONSÁVEL E DATA */}
-              <div className="info-row">
-                <div className="form-group">
-                  <label className="form-label">Responsável *</label>
-                  <input
-                    type="text"
-                    className={`form-input ${areaErros.responsavel ? 'error' : ''}`}
-                    placeholder="Nome do profissional responsável"
-                    value={area.responsavel}
-                    onChange={(e) => atualizarArea(area.area_id, 'responsavel', e.target.value)}
-                    disabled={isReadOnly}
-                  />
-                  {areaErros.responsavel && <div className="field-error">{areaErros.responsavel}</div>}
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Data de Revisão *</label>
-                  <input
-                    type="date"
-                    className={`form-input ${areaErros.data_revisao ? 'error' : ''}`}
-                    value={area.data_revisao}
-                    onChange={(e) => atualizarArea(area.area_id, 'data_revisao', e.target.value)}
-                    disabled={isReadOnly}
-                  />
-                  {areaErros.data_revisao && <div className="field-error">{areaErros.data_revisao}</div>}
+                    );
+                  })}
                 </div>
               </div>
-            </article>
-          );
-        })}
-
-        {!isReadOnly && (
-          <button className="btn btn-add-area" onClick={adicionarArea}>
-            + Adicionar Nova Área de Intervenção
-          </button>
+            ))}
+          </div>
         )}
-      </div>
+      </section>
 
-      {/* ACTION PANEL */}
-      <section className="action-panel">
-        {!isReadOnly && (
+      {/* FOOTER COM AÇÕES */}
+      <footer className="pei-footer">
+        <div className="footer-info">
+          <span>Nível {nivelCrianca}</span>
+          <span>•</span>
+          <span>{metasSelecionadas.length} metas selecionadas</span>
+        </div>
+        <div className="footer-actions">
+          <button className="btn-secundario" onClick={onBack}>
+            ← Voltar
+          </button>
           <button
-            className="btn btn-finalize"
-            onClick={tentarFinalizar}
+            className="btn-primario"
+            onClick={handleFinalize}
+            disabled={isReadOnly}
           >
-            ✓ Finalizar PEI e Encerrar Avaliação
+            ✅ Finalizar Avaliação
           </button>
-        )}
-        {isReadOnly && (
-          <div className="read-only-badge">🔒 MODO VISUALIZAÇÃO</div>
-        )}
-      </section>
-
-      {/* MODAL DE CONFIRMAÇÃO */}
-      {showConfirmModal && (
-        <div className="modal-overlay" onClick={() => setShowConfirmModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>🎉 Confirmar Finalização do PEI</h3>
-            <p>Você revisou todas as informações do Plano Educacional Individualizado?</p>
-            <div className="modal-summary">
-              <p><strong>Total de áreas:</strong> {areas.length}</p>
-              <p><strong>Total de metas:</strong> {areas.reduce((sum, a) => sum + a.metas.length, 0)}</p>
-            </div>
-            <p className="modal-warning">
-              ⚠️ Após finalizar, a sessão será encerrada e ficará em modo somente leitura.
-            </p>
-            <div className="modal-actions">
-              <button className="btn btn-secondary" onClick={() => setShowConfirmModal(false)}>
-                Cancelar
-              </button>
-              <button className="btn btn-primary" onClick={confirmarFinalizar}>
-                ✓ Confirmar e Finalizar
-              </button>
-            </div>
-          </div>
         </div>
-      )}
+      </footer>
     </div>
   );
 }
 
-function getPEIStyles() {
+// ═══════════════════════════════════════════════════════════════
+// ESTILOS
+// ═══════════════════════════════════════════════════════════════
+function getStyles() {
   return `
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
+
     .pei-screen {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 2rem 1rem;
+      font-family: 'Nunito', system-ui, sans-serif;
+      background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0fdfa 100%);
+      min-height: 100vh;
+      padding-bottom: 100px;
     }
 
+    /* HEADER */
     .pei-header {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      background: linear-gradient(135deg, #059669 0%, #10b981 100%);
       color: white;
-      padding: 2rem;
-      border-radius: 12px;
-      margin-bottom: 2rem;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      padding: 25px 5%;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      box-shadow: 0 4px 20px rgba(5, 150, 105, 0.3);
+    }
+
+    .header-content h1 {
+      font-size: 24px;
+      font-weight: 800;
+      margin: 0 0 5px 0;
+    }
+
+    .header-content p {
+      opacity: 0.9;
+      font-size: 14px;
+      margin: 0 0 12px 0;
+    }
+
+    .header-badges {
+      display: flex;
+      gap: 10px;
       flex-wrap: wrap;
-      gap: 1rem;
     }
 
-    .pei-header h1 {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
+    .header-badges span {
+      background: rgba(255,255,255,0.2);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
       font-weight: 700;
     }
 
-    .pei-header p {
-      opacity: 0.95;
-      font-size: 1rem;
-      margin-bottom: 0.5rem;
+    .badge-level {
+      background: rgba(255,255,255,0.3) !important;
     }
 
-    .session-info {
-      padding: 0.5rem 1rem;
-      background: rgba(255,255,255,0.15);
-      border-radius: 6px;
-      font-size: 0.9rem;
-      margin-top: 0.5rem;
-    }
-
-    .dados-consolidados {
-      background: white;
-      padding: 2rem;
-      border-radius: 12px;
-      margin-bottom: 2rem;
-      border: 1px solid #e5e7eb;
-    }
-
-    .dados-consolidados h2 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-      color: #111827;
-    }
-
-    .info-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-    }
-
-    .info-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem;
-      background: #f9fafb;
-      border-radius: 8px;
-    }
-
-    .info-label {
-      font-weight: 600;
-      color: #6b7280;
-      font-size: 0.875rem;
-    }
-
-    .info-value {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #10b981;
-    }
-
-    .areas-container {
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
-      margin-bottom: 2rem;
-    }
-
-    .area-card {
-      background: white;
-      padding: 2rem;
-      border-radius: 12px;
-      border: 2px solid #10b981;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .area-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-      padding-bottom: 1rem;
-      border-bottom: 2px solid #d1fae5;
-    }
-
-    .area-header h3 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #059669;
-      margin: 0;
-    }
-
-    .form-group {
-      margin-bottom: 1.5rem;
-    }
-
-    .form-label {
-      display: block;
-      font-weight: 600;
-      color: #374151;
-      margin-bottom: 0.5rem;
-      font-size: 0.95rem;
-    }
-
-    .form-label-small {
-      display: block;
-      font-weight: 600;
-      color: #6b7280;
-      margin-bottom: 0.25rem;
-      font-size: 0.875rem;
-    }
-
-    .form-input {
-      width: 100%;
-      padding: 0.75rem;
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      font-family: inherit;
-      transition: border-color 0.2s;
-      box-sizing: border-box;
-    }
-
-    .form-input:focus {
-      outline: none;
-      border-color: #10b981;
-    }
-
-    .form-input.error {
-      border-color: #dc2626;
-    }
-
-    .form-textarea {
-      width: 100%;
-      padding: 0.75rem;
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      font-family: inherit;
-      resize: vertical;
-      min-height: 80px;
-      transition: border-color 0.2s;
-      box-sizing: border-box;
-    }
-
-    .form-textarea:focus {
-      outline: none;
-      border-color: #10b981;
-    }
-
-    .form-textarea.error {
-      border-color: #dc2626;
-    }
-
-    .field-error {
-      color: #dc2626;
-      font-size: 0.875rem;
-      margin-top: 0.25rem;
-      font-weight: 500;
-    }
-
-    .metas-section {
-      margin: 2rem 0;
-      padding: 1.5rem;
-      background: #f9fafb;
-      border-radius: 8px;
-    }
-
-    .metas-section h4 {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #374151;
-      margin-bottom: 1rem;
-    }
-
-    .meta-row {
-      display: flex;
-      gap: 1rem;
-      align-items: flex-start;
-      margin-bottom: 1rem;
-      padding: 1rem;
-      background: white;
-      border-radius: 8px;
-      border: 1px solid #e5e7eb;
-    }
-
-    .meta-number {
-      background: #10b981;
-      color: white;
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      font-weight: 700;
-      white-space: nowrap;
-      align-self: flex-start;
-    }
-
-    .meta-fields {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .info-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-    }
-
-    .btn {
-      padding: 0.75rem 1.5rem;
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      background: white;
-      color: #6b7280;
-      white-space: nowrap;
-    }
-
-    .btn:hover {
-      background: #f9fafb;
-      transform: translateY(-1px);
+    .badge-readonly {
+      background: rgba(239, 68, 68, 0.3) !important;
     }
 
     .btn-back {
-      background: white;
-      color: #10b981;
-      border-color: white;
-    }
-
-    .btn-add {
-      background: #10b981;
+      background: rgba(255,255,255,0.2);
+      border: 2px solid rgba(255,255,255,0.3);
       color: white;
-      border-color: #10b981;
-      width: 100%;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
     }
 
-    .btn-add:hover {
-      background: #059669;
+    .btn-back:hover {
+      background: rgba(255,255,255,0.3);
     }
 
-    .btn-add-area {
-      background: #10b981;
-      color: white;
-      border-color: #10b981;
-      font-size: 1.1rem;
-      padding: 1rem 2rem;
-      width: 100%;
+    /* STATS SECTION */
+    .stats-section {
+      padding: 25px 5%;
     }
 
-    .btn-add-area:hover {
-      background: #059669;
+    .stats-section h2 {
+      font-size: 18px;
+      font-weight: 800;
+      color: #1f2937;
+      margin: 0 0 15px 0;
     }
 
-    .btn-remove-small {
-      background: #dc2626;
-      color: white;
-      border-color: #dc2626;
-      padding: 0.5rem 0.75rem;
-      font-size: 1rem;
-      min-width: 40px;
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
     }
 
-    .btn-remove-small:hover {
-      background: #b91c1c;
-    }
-
-    .btn-finalize {
-      background: #10b981;
-      color: white;
-      border-color: #10b981;
-      font-size: 1.1rem;
-      padding: 1rem 3rem;
-    }
-
-    .btn-finalize:hover {
-      background: #059669;
-    }
-
-    .action-panel {
-      position: sticky;
-      bottom: 0;
-      background: white;
-      padding: 1.5rem;
+    .stat-card {
+      padding: 20px;
       border-radius: 12px;
-      border: 2px solid #10b981;
-      box-shadow: 0 -4px 6px rgba(0,0,0,0.1);
-      display: flex;
-      justify-content: center;
+      text-align: center;
     }
 
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.5);
+    .stat-card.verde { background: linear-gradient(135deg, #d1fae5, #a7f3d0); }
+    .stat-card.amarelo { background: linear-gradient(135deg, #fef3c7, #fde68a); }
+    .stat-card.cinza { background: linear-gradient(135deg, #f3f4f6, #e5e7eb); }
+    .stat-card.roxo { background: linear-gradient(135deg, #ede9fe, #ddd6fe); }
+
+    .stat-numero {
+      display: block;
+      font-size: 28px;
+      font-weight: 800;
+      color: #1f2937;
+    }
+
+    .stat-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: #4b5563;
+      margin-top: 4px;
+    }
+
+    .stat-detalhe {
+      display: block;
+      font-size: 10px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+
+    /* METAS SECTION */
+    .metas-section {
+      padding: 0 5% 25px;
+    }
+
+    .metas-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .metas-header h2 {
+      font-size: 18px;
+      font-weight: 800;
+      color: #1f2937;
+      margin: 0;
+    }
+
+    .metas-counter {
+      background: #059669;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .counter-numero {
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .counter-label {
+      font-size: 12px;
+    }
+
+    /* EMPTY STATE */
+    .empty-state {
+      background: white;
+      border-radius: 16px;
+      padding: 60px 40px;
+      text-align: center;
+      border: 2px dashed #a7f3d0;
+    }
+
+    .empty-icon {
+      font-size: 64px;
+      display: block;
+      margin-bottom: 15px;
+    }
+
+    .empty-state h3 {
+      margin: 0 0 10px 0;
+      color: #059669;
+      font-size: 24px;
+    }
+
+    .empty-state p {
+      margin: 5px 0;
+      color: #6b7280;
+    }
+
+    /* DOMÍNIOS LISTA */
+    .dominios-lista {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .dominio-card {
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+
+    .dominio-header {
+      background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #d1fae5;
+    }
+
+    .dominio-header h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+      color: #065f46;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dominio-icon {
+      font-size: 20px;
+    }
+
+    .dominio-count {
+      background: #059669;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* MILESTONES LISTA */
+    .milestones-lista {
+      padding: 10px;
+    }
+
+    .milestone-item {
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      margin-bottom: 10px;
+      overflow: hidden;
+      transition: all 0.2s;
+    }
+
+    .milestone-item:hover {
+      border-color: #10b981;
+    }
+
+    .milestone-header {
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      background: #f9fafb;
+      transition: background 0.2s;
+    }
+
+    .milestone-header:hover {
+      background: #f0fdf4;
+    }
+
+    .milestone-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .milestone-status {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 1000;
+      font-size: 16px;
+      font-weight: 800;
     }
 
-    .modal-content {
-      background: white;
-      padding: 2rem;
-      border-radius: 12px;
-      max-width: 500px;
-      width: 90%;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    }
-
-    .modal-content h3 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #111827;
-      margin-bottom: 1rem;
-    }
-
-    .modal-content p {
-      color: #6b7280;
-      margin-bottom: 0.5rem;
-    }
-
-    .modal-summary {
-      background: #f0fdf4;
-      padding: 1rem;
-      border-radius: 8px;
-      margin: 1rem 0;
-    }
-
-    .modal-summary p {
-      margin: 0.25rem 0;
-      color: #166534;
-    }
-
-    .modal-warning {
+    .milestone-status.emergente {
       background: #fef3c7;
-      padding: 0.75rem;
+      color: #92400e;
+      border: 2px solid #fde68a;
+    }
+
+    .milestone-status.nao_observado {
+      background: #f3f4f6;
+      color: #6b7280;
+      border: 2px solid #e5e7eb;
+    }
+
+    .milestone-id {
+      background: #1f2937;
+      color: white;
+      padding: 4px 10px;
       border-radius: 6px;
-      color: #92400e !important;
-      font-size: 0.9rem;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: monospace;
     }
 
-    .modal-actions {
+    .milestone-texto {
+      font-size: 14px;
+      color: #374151;
+      flex: 1;
+    }
+
+    .milestone-actions {
       display: flex;
-      gap: 1rem;
-      margin-top: 1.5rem;
-      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
     }
 
-    .btn-secondary {
-      background: #6b7280;
+    .tarefas-badge {
+      background: #059669;
       color: white;
-      border-color: #6b7280;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
     }
 
-    .btn-secondary:hover {
-      background: #4b5563;
+    .expand-icon {
+      color: #9ca3af;
+      font-size: 12px;
     }
 
-    .btn-primary {
-      background: #10b981;
-      color: white;
+    /* TAREFAS LISTA */
+    .tarefas-lista {
+      padding: 15px;
+      background: #f9fafb;
+      border-top: 2px solid #e5e7eb;
+    }
+
+    .tarefas-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #6b7280;
+      text-transform: uppercase;
+    }
+
+    .btn-selecionar-todas {
+      background: #e0f2fe;
+      border: 1px solid #7dd3fc;
+      color: #0369a1;
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-selecionar-todas:hover:not(:disabled) {
+      background: #bae6fd;
+    }
+
+    .btn-selecionar-todas:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .tarefa-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      background: white;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tarefa-item:hover {
+      border-color: #10b981;
+      background: #f0fdf4;
+    }
+
+    .tarefa-item.selecionada {
+      background: #d1fae5;
       border-color: #10b981;
     }
 
-    .btn-primary:hover {
-      background: #059669;
+    .tarefa-checkbox {
+      font-size: 18px;
+      color: #10b981;
+      flex-shrink: 0;
     }
 
+    .tarefa-id {
+      background: #e0e7ff;
+      color: #4338ca;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .tarefa-texto {
+      font-size: 13px;
+      color: #374151;
+      line-height: 1.4;
+    }
+
+    .sem-tarefas {
+      padding: 15px;
+      background: #f9fafb;
+      border-top: 2px solid #e5e7eb;
+      text-align: center;
+      color: #9ca3af;
+      font-size: 13px;
+    }
+
+    /* FOOTER */
+    .pei-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      padding: 15px 5%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+      z-index: 100;
+    }
+
+    .footer-info {
+      display: flex;
+      gap: 10px;
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .footer-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-secundario {
+      background: #f3f4f6;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 14px;
+      color: #4b5563;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-secundario:hover {
+      background: #e5e7eb;
+    }
+
+    .btn-primario {
+      background: linear-gradient(135deg, #059669, #10b981);
+      border: none;
+      padding: 12px 28px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 14px;
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);
+    }
+
+    .btn-primario:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4);
+    }
+
+    .btn-primario:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* RESPONSIVE */
     @media (max-width: 768px) {
-      .info-row {
-        grid-template-columns: 1fr;
-      }
-
-      .meta-row {
+      .pei-header {
         flex-direction: column;
+        text-align: center;
+        gap: 15px;
       }
-    }
 
-    .read-only-badge {
-      background: #ecfdf5;
-      color: #059669;
-      padding: 0.75rem 3rem;
-      border-radius: 8px;
-      font-weight: 800;
-      border: 2px solid #6ee7b7;
+      .header-badges {
+        justify-content: center;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .metas-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .milestone-info {
+        flex-wrap: wrap;
+      }
+
+      .milestone-texto {
+        width: 100%;
+        margin-top: 8px;
+      }
+
+      .pei-footer {
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .footer-actions {
+        width: 100%;
+      }
+
+      .btn-primario, .btn-secundario {
+        flex: 1;
+      }
     }
   `;
 }

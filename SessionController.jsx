@@ -5,6 +5,7 @@ import SubtestesScreen from './SubtestesScreen';
 import BarreirasScreen from './BarreirasScreen';
 import TransicaoScreen from './TransicaoScreen';
 import PEIScreen from './PEIScreen';
+import PainelCrianca from './PainelCrianca';  // ✅ NOVO: Painel da Criança
 import ConsolidadoLongitudinal from './ConsolidadoLongitudinal';
 import PDFReport from './PDFReport';
 import PDFReportV3 from './PDFReportV3';
@@ -20,6 +21,7 @@ export default function SessionController({
     onUpdateSession = () => { },
     onBackToList = () => { },
     onSelectSession = () => { },
+    getHistoricoSessoes = () => [],  // ✅ NOVO: Função para buscar histórico
     sessionAnalysis = null,
     generateAIReport = () => { },
     generatingAI = false,
@@ -68,7 +70,7 @@ export default function SessionController({
                 milestones_completo: selectedSession.milestones_completo,
                 ecoico_completo: selectedSession.ecoico_completo,
                 tarefas_completas: selectedSession.tarefas_completas,
-                barreiras_completas: selectedSession.barreiras_completas,  // ⬅️ VERIFICAR ESTE
+                barreiras_completas: selectedSession.barreiras_completas,
                 transicao_completa: selectedSession.transicao_completa,
                 pei_completo: selectedSession.pei_completo,
                 sessao_fechada: selectedSession.sessao_fechada,
@@ -79,17 +81,219 @@ export default function SessionController({
         });
     }, [viewMode, selectedSession, sessions.length]);
 
+    // ═══════════════════════════════════════════════════════════════
     // 1. LISTA DE SESSÕES (TELA INICIAL)
+    // ═══════════════════════════════════════════════════════════════
     if (viewMode === 'sessions') {
         return (
             <div className="sessions-view">
+                <style>{`
+                    .sessions-view {
+                        max-width: 1200px;
+                        margin: 0 auto;
+                        padding: 2rem;
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+                    }
+                    .header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 2.5rem;
+                        background: #fff;
+                        padding: 1.5rem 2rem;
+                        border-radius: 16px;
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+                    }
+                    .header-content h1 {
+                        margin: 0;
+                        font-size: 1.8rem;
+                        color: #1e293b;
+                        font-weight: 800;
+                    }
+                    .header-content p {
+                        margin: 0.2rem 0 0;
+                        color: #64748b;
+                        font-size: 0.95rem;
+                    }
+                    .sessions-list {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 20px;
+                    }
+                    .session-card {
+                        background: #fff;
+                        border-radius: 12px;
+                        padding: 1.5rem;
+                        box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+                        border-left: 6px solid #6366f1;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        transition: transform 0.2s, box-shadow 0.2s;
+                    }
+                    .session-card.finalizada {
+                        border-left-color: #10b981;
+                    }
+                    .session-card:hover {
+                        transform: translateY(-2px);
+                        box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+                    }
+                    .session-info-main h3 {
+                        margin: 0 0 0.4rem 0;
+                        font-size: 1.25rem;
+                        color: #1e293b;
+                        font-weight: 700;
+                    }
+                    .session-date {
+                        color: #94a3b8;
+                        font-size: 0.85rem;
+                        font-weight: 500;
+                    }
+                    .session-details {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 12px;
+                        flex: 1;
+                        margin-left: 1.5rem;
+                    }
+                    .session-meta-stats {
+                        display: flex;
+                        gap: 12px;
+                        align-items: center;
+                    }
+                    .marcos-count {
+                        font-size: 0.85rem;
+                        color: #64748b;
+                        background: #f1f5f9;
+                        padding: 4px 10px;
+                        border-radius: 6px;
+                    }
+                    .session-progress-circles {
+                        display: flex;
+                        gap: 8px;
+                    }
+                    .progress-circle {
+                        width: 32px;
+                        height: 32px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 0.75rem;
+                        font-weight: 700;
+                        color: white;
+                        cursor: default;
+                    }
+                    .progress-circle.completed {
+                        background: #10b981;
+                    }
+                    .progress-circle.pending {
+                        background: #e2e8f0;
+                        color: #94a3b8;
+                    }
+                    .session-actions {
+                        display: flex;
+                        gap: 12px;
+                        margin-left: 1.5rem;
+                    }
+                    .btn-outline-indigo {
+                        background: transparent;
+                        border: 2px solid #6366f1;
+                        color: #6366f1;
+                        padding: 0.6rem 1.2rem;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                    }
+                    .btn-outline-indigo:hover {
+                        background: #6366f1;
+                        color: white;
+                    }
+                    .btn-outline-purple {
+                        background: transparent;
+                        border: 2px solid #7c3aed;
+                        color: #7c3aed;
+                        padding: 0.6rem 1.2rem;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                    }
+                    .btn-outline-purple:hover {
+                        background: #7c3aed;
+                        color: white;
+                    }
+                    .btn-primary-indigo {
+                        background: #6366f1;
+                        border: 2px solid #6366f1;
+                        color: white;
+                        padding: 0.6rem 1.2rem;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                    }
+                    .btn-primary-indigo:hover {
+                        background: #4f46e5;
+                        border-color: #4f46e5;
+                        transform: translateY(-1px);
+                    }
+                    .btn-primary-green {
+                        background: #10b981;
+                        border: 2px solid #10b981;
+                        color: white;
+                        padding: 0.6rem 1.2rem;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                    }
+                    .btn-primary-green:hover {
+                        background: #059669;
+                        border-color: #059669;
+                    }
+                    .ai-pill {
+                        background: #ede9fe;
+                        color: #7c3aed;
+                        padding: 2px 8px;
+                        border-radius: 4px;
+                        font-size: 0.7rem;
+                        font-weight: 700;
+                    }
+                    .eco-pill {
+                        background: #e0f2fe;
+                        color: #0369a1;
+                        padding: 2px 8px;
+                        border-radius: 4px;
+                        font-size: 0.7rem;
+                        font-weight: 700;
+                    }
+                    .finalizada-pill {
+                        background: #d1fae5;
+                        color: #065f46;
+                        padding: 2px 8px;
+                        border-radius: 4px;
+                        font-size: 0.7rem;
+                        font-weight: 700;
+                    }
+                    .empty {
+                        text-align: center;
+                        padding: 4rem;
+                        background: #fff;
+                        border-radius: 16px;
+                        color: #64748b;
+                        border: 2px dashed #e2e8f0;
+                    }
+                `}</style>
+
                 <header className="header">
                     <div className="header-content">
                         <h1>📋 Sessões de Avaliação</h1>
                         <p>{sessions.length} sessão(ões) registrada(s)</p>
                     </div>
                     <button
-                        className="btn btn-primary"
+                        className="btn btn-primary-indigo"
                         onClick={() => {
                             console.log("🎯 Iniciando nova avaliação");
                             onStartNewEvaluation();
@@ -107,87 +311,77 @@ export default function SessionController({
                         </div>
                     ) : (
                         sessions.map(session => (
-                            <div key={session.session_id} className="session-card">
-                                <div className="session-header">
+                            <div
+                                key={session.session_id}
+                                className={`session-card ${session.sessao_fechada ? 'finalizada' : ''}`}
+                            >
+                                <div className="session-info-main">
                                     <h3>{session.child_name || "Criança sem nome"}</h3>
                                     <span className="session-date">
-                                        {new Date(session.date).toLocaleDateString('pt-BR')}
+                                        📅 {new Date(session.date).toLocaleDateString('pt-BR')}
                                     </span>
                                 </div>
 
-                                <div className="session-stats">
-                                    <span>
-                                        {Object.keys(session.scores_snapshot || {}).length} marcos avaliados
-                                    </span>
-                                    {session.ai_report && <span className="ai-badge">🤖 IA</span>}
-                                    {session.ecoico_results && <span className="ai-badge">🔊 Ecoico</span>}
-                                </div>
-
-                                <div className="session-progress-badges">
-                                    <span
-                                        title="Milestones"
-                                        className={`badge ${session.milestones_completo ? 'completed' : 'pending'}`}
-                                    >
-                                        M
-                                    </span>
-                                    {hasEcoicoLacuna(session) && (
-                                        <span
-                                            title="Ecoico"
-                                            className={`badge ${session.ecoico_completo ? 'completed' : 'pending'}`}
-                                        >
-                                            E
+                                <div className="session-details">
+                                    <div className="session-meta-stats">
+                                        <span className="marcos-count">
+                                            📊 {Object.keys(session.scores_snapshot || {}).length} marcos
                                         </span>
-                                    )}
-                                    <span
-                                        title="Subtestes"
-                                        className={`badge ${session.tarefas_completas ? 'completed' : 'pending'}`}
-                                    >
-                                        S
-                                    </span>
-                                    <span
-                                        title="Barreiras"
-                                        className={`badge ${session.barreiras_completas ? 'completed' : 'pending'}`}
-                                    >
-                                        B
-                                    </span>
-                                    <span
-                                        title="Transição"
-                                        className={`badge ${session.transicao_completa ? 'completed' : 'pending'}`}
-                                    >
-                                        T
-                                    </span>
-                                    <span
-                                        title="PEI"
-                                        className={`badge ${session.pei_completo ? 'completed' : 'pending'}`}
-                                    >
-                                        P
-                                    </span>
+                                        {session.ai_report && <span className="ai-pill">🤖 IA</span>}
+                                        {session.ecoico_results && <span className="eco-pill">🔊 Ecoico</span>}
+                                        {session.sessao_fechada && <span className="finalizada-pill">✓ Finalizada</span>}
+                                    </div>
+
+                                    <div className="session-progress-circles">
+                                        <div title="Milestones" className={`progress-circle ${session.milestones_completo ? 'completed' : 'pending'}`}>M</div>
+                                        {hasEcoicoLacuna(session) && (
+                                            <div title="Ecoico" className={`progress-circle ${session.ecoico_completo ? 'completed' : 'pending'}`}>E</div>
+                                        )}
+                                        <div title="Subtestes" className={`progress-circle ${session.tarefas_completas ? 'completed' : 'pending'}`}>S</div>
+                                        <div title="Barreiras" className={`progress-circle ${session.barreiras_completas ? 'completed' : 'pending'}`}>B</div>
+                                        <div title="Transição" className={`progress-circle ${session.transicao_completa ? 'completed' : 'pending'}`}>T</div>
+                                        <div title="PEI" className={`progress-circle ${session.pei_completo ? 'completed' : 'pending'}`}>P</div>
+                                    </div>
                                 </div>
 
                                 <div className="session-actions">
+                                    {/* Botão Painel da Criança (só aparece se sessão finalizada) */}
+                                    {session.sessao_fechada && (
+                                        <button
+                                            className="btn-outline-purple"
+                                            onClick={() => {
+                                                console.log("🧒 Abrindo Painel da Criança:", session.session_id);
+                                                setSelectedSession(session);
+                                                setViewMode('painel_crianca');
+                                            }}
+                                        >
+                                            🧒 Painel
+                                        </button>
+                                    )}
+
                                     <button
-                                        className="btn btn-primary"
+                                        className="btn-outline-indigo"
                                         onClick={() => {
                                             console.log("📊 Abrindo relatório para:", session.session_id);
                                             setSelectedSession(session);
                                             setViewMode('report');
                                         }}
                                     >
-                                        📊 Relatório
+                                        📄 Relatório
                                     </button>
 
                                     <button
-                                        className="btn btn-success"
+                                        className={session.sessao_fechada ? "btn-primary-green" : "btn-primary-indigo"}
                                         onClick={() => {
-                                            console.log("🚀 Continuando avaliação:", session.session_id);
+                                            console.log("🚀 Abrindo sessão:", session.session_id);
                                             onSelectSession(session);
                                         }}
                                     >
                                         {session.sessao_fechada
-                                            ? '👁️ Visualizar'
+                                            ? '👁️ Ver'
                                             : session.milestones_completo
                                                 ? '➡️ Continuar'
-                                                : '🚀 Iniciar/Continuar'}
+                                                : '🚀 Iniciar'}
                                     </button>
                                 </div>
                             </div>
@@ -198,7 +392,40 @@ export default function SessionController({
         );
     }
 
-    // 2. MODO TESTE (DRAFT) - Mantido para compatibilidade
+    // ═══════════════════════════════════════════════════════════════
+    // 2. PAINEL DA CRIANÇA (NOVO!)
+    // ═══════════════════════════════════════════════════════════════
+    if (viewMode === 'painel_crianca' && selectedSession) {
+        console.log("🧒 Exibindo Painel da Criança para:", selectedSession.child_name);
+
+        // Buscar histórico de sessões da mesma criança
+        const historicoSessoes = getHistoricoSessoes(selectedSession.child_name);
+
+        return (
+            <PainelCrianca
+                crianca={{
+                    nome: selectedSession.child_name,
+                    idade: selectedSession.child_age
+                }}
+                sessaoAtual={selectedSession}
+                historicoSessoes={historicoSessoes}
+                onGerarRelatorio={(tipo) => {
+                    console.log("📄 Gerando relatório:", tipo);
+                    // TODO: Implementar geração de relatório por tipo
+                    setViewMode('report');
+                }}
+                onGerarPEI={() => {
+                    console.log("📝 Abrindo PEI");
+                    setViewMode('evaluation');
+                }}
+                onVoltar={onBackToList}
+            />
+        );
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // 3. MODO TESTE (DRAFT) - Mantido para compatibilidade
+    // ═══════════════════════════════════════════════════════════════
     if (viewMode === 'test') {
         return (
             <div className="test-view">
@@ -301,7 +528,9 @@ export default function SessionController({
         );
     }
 
-    // 3. FLUXO DE AVALIAÇÃO SEQUENCIAL (A LÓGICA MESTRE)
+    // ═══════════════════════════════════════════════════════════════
+    // 4. FLUXO DE AVALIAÇÃO SEQUENCIAL (A LÓGICA MESTRE)
+    // ═══════════════════════════════════════════════════════════════
     if (viewMode === 'evaluation' && selectedSession) {
         console.log("🎯 Modo avaliação ativo para sessão:", selectedSession.session_id);
         console.log("📋 FLAGS DA SESSÃO:", {
@@ -315,10 +544,31 @@ export default function SessionController({
 
         const isReadOnly = !!selectedSession.sessao_fechada;
 
-        // Verifica se sessão está finalizada
+        // ✅ SESSÃO FINALIZADA → PAINEL DA CRIANÇA
         if (selectedSession.sessao_fechada) {
-            console.log("🏁 Sessão finalizada, mostrando consolidado");
-            return <ConsolidadoFinalView session={selectedSession} onBack={onBackToList} />;
+            console.log("🏁 Sessão finalizada, redirecionando para Painel da Criança");
+
+            const historicoSessoes = getHistoricoSessoes(selectedSession.child_name);
+
+            return (
+                <PainelCrianca
+                    crianca={{
+                        nome: selectedSession.child_name,
+                        idade: selectedSession.child_age
+                    }}
+                    sessaoAtual={selectedSession}
+                    historicoSessoes={historicoSessoes}
+                    onGerarRelatorio={(tipo) => {
+                        console.log("📄 Gerando relatório:", tipo);
+                        setViewMode('report');
+                    }}
+                    onGerarPEI={() => {
+                        console.log("📝 Visualizando PEI (readonly)");
+                        // Mostra PEI em modo somente leitura
+                    }}
+                    onVoltar={onBackToList}
+                />
+            );
         }
 
         // TELA 1: Milestones
@@ -375,7 +625,9 @@ export default function SessionController({
             console.log("🧪 DECISÃO: Indo para SubtestesScreen (tarefas_completas = false)");
             return (
                 <SubtestesScreen
-                    lacunas={selectedSession.lacunas || []}
+                    key={`subtestes-${selectedSession.session_id}-${selectedSession.active_level || '1'}`}
+                    data={data}
+                    audience={audience}
                     sessionInfo={selectedSession}
                     onFinalize={(payload) => {
                         console.log("✅ SubtestesScreen finalizada, payload:", payload);
@@ -399,12 +651,10 @@ export default function SessionController({
                     onFinalize={(payload) => {
                         console.log("✅ BarreirasScreen finalizada!");
                         console.log("📦 Payload recebido:", payload);
-                        console.log("🔑 barreiras_completas no payload:", payload.barreiras_completas);
 
-                        // Chamar onUpdateSession e logar
                         const updateData = {
                             ...payload,
-                            barreiras_completas: true  // Garantir que está true
+                            barreiras_completas: true
                         };
                         console.log("📤 Enviando para onUpdateSession:", updateData);
 
@@ -419,12 +669,6 @@ export default function SessionController({
         // TELA 4: Transição
         if (!selectedSession.transicao_completa) {
             console.log("🔄 DECISÃO: Indo para TransicaoScreen (transicao_completa = false)");
-            console.log("📊 Dados disponíveis para Transição:", {
-                percentuais: selectedSession.percentuais,
-                escore_total_barreiras: selectedSession.escore_total_barreiras,
-                lacunas: selectedSession.lacunas?.length
-            });
-
             return (
                 <TransicaoScreen
                     sessionInfo={selectedSession}
@@ -441,18 +685,23 @@ export default function SessionController({
             );
         }
 
-        // TELA 5: PEI
+        // TELA 5: PEI → Depois vai para Painel da Criança
         console.log("📝 DECISÃO: Indo para PEIScreen (todas as etapas anteriores completas)");
         return (
             <PEIScreen
                 sessionInfo={selectedSession}
                 onFinalize={(payload) => {
                     console.log("✅ PEIScreen finalizada, payload:", payload);
+                    console.log("🧒 Avaliação completa! Indo para Painel da Criança...");
+
                     onUpdateSession({
                         ...payload,
                         pei_completo: true,
                         sessao_fechada: true
                     });
+
+                    // Após finalizar, vai automaticamente para o Painel da Criança
+                    // porque sessao_fechada = true
                 }}
                 onBack={onBackToList}
                 isReadOnly={isReadOnly}
@@ -460,10 +709,60 @@ export default function SessionController({
         );
     }
 
-    // 4. RELATÓRIO E OUTRAS VIEWS
+    // ═══════════════════════════════════════════════════════════════
+    // 5. RELATÓRIO
+    // ═══════════════════════════════════════════════════════════════
     if (viewMode === 'report' && selectedSession) {
         return (
             <div className="report-view">
+                <style>{`
+                    .report-view {
+                        max-width: 1200px;
+                        margin: 0 auto;
+                        padding: 2rem;
+                    }
+                    .header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 2rem;
+                        padding: 1rem;
+                        background: #fff;
+                        border-radius: 12px;
+                    }
+                    .header-actions {
+                        display: flex;
+                        gap: 10px;
+                    }
+                    .btn {
+                        padding: 0.6rem 1.2rem;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                    }
+                    .btn-secondary {
+                        background: #f1f5f9;
+                        border: none;
+                        color: #475569;
+                    }
+                    .btn-primary {
+                        background: #6366f1;
+                        border: none;
+                        color: white;
+                    }
+                    .btn-purple {
+                        background: #7c3aed;
+                        border: none;
+                        color: white;
+                    }
+                    .report-content {
+                        background: #fff;
+                        border-radius: 12px;
+                        padding: 2rem;
+                    }
+                `}</style>
+
                 <header className="header no-print">
                     <h1>📄 Relatório VB-MAPP</h1>
                     <div className="header-actions">
@@ -471,8 +770,16 @@ export default function SessionController({
                             className="btn btn-secondary"
                             onClick={onBackToList}
                         >
-                            ← Voltar para Sessões
+                            ← Voltar
                         </button>
+                        {selectedSession.sessao_fechada && (
+                            <button
+                                className="btn btn-purple"
+                                onClick={() => setViewMode('painel_crianca')}
+                            >
+                                🧒 Painel da Criança
+                            </button>
+                        )}
                         <button
                             className="btn btn-primary"
                             onClick={() => setShowPDFPreview(!showPDFPreview)}
@@ -532,10 +839,6 @@ export default function SessionController({
                                     </div>
                                 </div>
                             )}
-
-                            {getReportText && typeof getReportText === 'function' && (
-                                <p className="report-text">{getReportText()}</p>
-                            )}
                         </section>
                     )}
                 </div>
@@ -543,7 +846,9 @@ export default function SessionController({
         );
     }
 
-    // 5. VISÃO CONSOLIDADA LONGITUDINAL
+    // ═══════════════════════════════════════════════════════════════
+    // 6. VISÃO CONSOLIDADA LONGITUDINAL
+    // ═══════════════════════════════════════════════════════════════
     if (viewMode === 'consolidado_longitudinal') {
         return (
             <ConsolidadoLongitudinal
@@ -555,7 +860,9 @@ export default function SessionController({
         );
     }
 
-    // 6. VIEW PADRÃO
+    // ═══════════════════════════════════════════════════════════════
+    // 7. VIEW PADRÃO
+    // ═══════════════════════════════════════════════════════════════
     return (
         <div className="default-view">
             <h1>PsicoTestes VB-MAPP</h1>
@@ -565,73 +872,6 @@ export default function SessionController({
                 onClick={onBackToList}
             >
                 Voltar para Sessões
-            </button>
-        </div>
-    );
-}
-
-// COMPONENTE INTERNO: ConsolidadoFinalView
-function ConsolidadoFinalView({ session, onBack }) {
-    return (
-        <div className="consolidado-container">
-            <style>{`
-                .consolidado-container { 
-                    max-width: 800px; 
-                    margin: 3rem auto; 
-                    padding: 3rem; 
-                    background: #fff; 
-                    border-radius: 16px; 
-                    border: 1px solid #e2e8f0; 
-                    text-align: center; 
-                }
-                .alert-closed { 
-                    background: #f0fff4; 
-                    color: #22543d; 
-                    padding: 2rem; 
-                    border-radius: 8px; 
-                    margin-bottom: 2rem; 
-                    font-weight: 600; 
-                }
-                .btn-exit { 
-                    padding: 1rem 2rem; 
-                    background: #1a202c; 
-                    color: white; 
-                    border: none; 
-                    border-radius: 8px; 
-                    cursor: pointer; 
-                    font-size: 1rem;
-                    transition: background 0.3s;
-                }
-                .btn-exit:hover {
-                    background: #2d3748;
-                }
-            `}</style>
-
-            <h1>Avaliação Finalizada ✓</h1>
-
-            <div className="alert-closed">
-                <h3>Sessão Concluída</h3>
-                <p>
-                    A avaliação de <strong>{session.child_name || "Criança"}</strong> foi concluída
-                    e os dados estão protegidos.
-                </p>
-                <p className="small-text">
-                    A sessão agora é somente leitura para preservar a integridade dos dados.
-                </p>
-            </div>
-
-            <div className="session-summary">
-                <h4>Resumo da Sessão:</h4>
-                <p><strong>Data:</strong> {new Date(session.date).toLocaleDateString('pt-BR')}</p>
-                <p><strong>Marcos avaliados:</strong> {Object.keys(session.scores_snapshot || {}).length}</p>
-                <p><strong>Lacunas identificadas:</strong> {session.lacunas?.length || 0}</p>
-                {session.ecoico_summary && (
-                    <p><strong>Ecoico:</strong> {session.ecoico_summary.text}</p>
-                )}
-            </div>
-
-            <button className="btn-exit" onClick={onBack}>
-                ← Voltar para Lista de Sessões
             </button>
         </div>
     );

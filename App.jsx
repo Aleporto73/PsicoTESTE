@@ -1,54 +1,52 @@
 import React, { useState, useEffect } from 'react';
 import SessionController from './SessionController';
-import VBMAPP_DATA from './data';  // ✅ IMPORTA OS 154 BLOCOS DO data.js
+import VBMAPP_DATA from './data';
+import PsicoTestesLayout from './PsicoTestesLayout';
+import PsicoTestesContainer from './PsicoTestesContainer';
+import CadastroSimples from './CadastroSimples';
+import { ClipboardList, Activity } from 'lucide-react';
 
 export default function App() {
   const [sessions, setSessions] = useState([]);
   const [selectedSession, setSelectedSession] = useState(null);
   const [viewMode, setViewMode] = useState('sessions');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [showCadastro, setShowCadastro] = useState(false);
 
-  // ✅ LOG para debug
-  useEffect(() => {
-    console.log("🎯 App inicializado com:", {
-      dadosCarregados: !!VBMAPP_DATA,
-      dominios: VBMAPP_DATA?.domains?.length || 0,
-      totalBlocos: VBMAPP_DATA?.domains?.reduce((acc, d) => acc + (d.blocks?.length || 0), 0) || 0
-    });
-  }, []);
-
-  // 1. Persistência - Carregar sessões salvas
+  // Carregar sessões do localStorage
   useEffect(() => {
     const saved = localStorage.getItem('vbmapp_sessions');
     if (saved) {
       try {
         const parsedSessions = JSON.parse(saved);
         setSessions(parsedSessions);
-        console.log("📂 Sessões carregadas:", parsedSessions.length);
       } catch (e) {
-        console.error("Erro ao carregar sessões:", e);
         localStorage.removeItem('vbmapp_sessions');
       }
     }
   }, []);
 
-  // 2. Persistência - Salvar automaticamente
+  // Salvar sessões no localStorage
   useEffect(() => {
     if (sessions.length > 0) {
       localStorage.setItem('vbmapp_sessions', JSON.stringify(sessions));
-      console.log("💾 Sessões salvas:", sessions.length);
     }
   }, [sessions]);
 
-  // 3. Iniciar Nova Avaliação
   const handleStartNewEvaluation = () => {
+    setShowCadastro(true);
+  };
+
+  const handleSaveCadastro = (dados) => {
     const newSession = {
       session_id: `session_${Date.now()}`,
-      child_name: "Nova Criança",
-      child_age: "5 anos",
+      child_name: dados.child_name,
+      child_age: dados.child_age,
       date: new Date().toISOString(),
+      created_at: new Date().toISOString(),
       scores_snapshot: {},
       lacunas: [],
+      barreiras: [],
       milestones_completo: false,
       tarefas_completas: false,
       barreiras_completas: false,
@@ -58,22 +56,15 @@ export default function App() {
       lastUpdated: new Date().toISOString()
     };
 
-    console.log("🚀 Nova sessão criada:", newSession.session_id);
-
     setSessions(prev => [newSession, ...prev]);
     setSelectedSession(newSession);
+    setShowCadastro(false);
     setViewMode('evaluation');
     setRefreshTrigger(prev => prev + 1);
   };
 
-  // 4. Atualização da Sessão
   const handleUpdateSession = (updatedData) => {
-    if (!selectedSession) {
-      console.error("❌ Não há sessão selecionada para atualizar");
-      return;
-    }
-
-    console.log("🔄 Atualizando sessão:", updatedData);
+    if (!selectedSession) return;
 
     const updatedSession = {
       ...selectedSession,
@@ -81,14 +72,13 @@ export default function App() {
       lastUpdated: new Date().toISOString()
     };
 
-    // Atualização síncrona
     setSelectedSession(updatedSession);
     setSessions(prev => prev.map(s =>
       s.session_id === selectedSession.session_id ? updatedSession : s
     ));
     setRefreshTrigger(prev => prev + 1);
 
-    // Persistência
+    // Persistir imediatamente
     setTimeout(() => {
       try {
         const allSessions = JSON.parse(localStorage.getItem('vbmapp_sessions') || '[]');
@@ -97,34 +87,80 @@ export default function App() {
         );
         localStorage.setItem('vbmapp_sessions', JSON.stringify(updatedSessions));
       } catch (error) {
-        console.error("❌ Erro ao persistir:", error);
+        console.error("Erro ao persistir:", error);
       }
     }, 100);
 
     return updatedSession;
   };
 
-  // 5. Voltar à lista
   const handleBackToList = () => {
     setSelectedSession(null);
+    setShowCadastro(false);
     setViewMode('sessions');
     setRefreshTrigger(prev => prev + 1);
   };
 
-  // 6. Selecionar sessão existente
   const handleSelectSession = (session) => {
     setSelectedSession(session);
     setViewMode('evaluation');
     setRefreshTrigger(prev => prev + 1);
   };
 
-  console.log("🎮 App - Estado:", {
-    viewMode,
-    selectedSessionId: selectedSession?.session_id,
-    sessionsCount: sessions.length,
-    dadosVB: `${VBMAPP_DATA.domains.length} domínios, ${VBMAPP_DATA.domains.reduce((acc, d) => acc + d.blocks.length, 0)} blocos`
-  });
+  const getHistoricoSessoes = (childName) => {
+    return sessions.filter(s =>
+      s.child_name === childName &&
+      s.session_id !== selectedSession?.session_id
+    );
+  };
 
+  const menuItems = [
+    { id: 'dashboard', icon: ClipboardList, label: 'Painel de Avaliações' },
+    { id: 'vbmapp', icon: Activity, label: 'VB-MAPP' },
+  ];
+
+  // ========================================
+  // MODO DASHBOARD: Lista com layout bonito
+  // ========================================
+  if (viewMode === 'sessions' && !showCadastro) {
+    return (
+      <PsicoTestesLayout
+        activeView="dashboard"
+        setActiveView={(view) => {
+          if (view === 'vbmapp') handleStartNewEvaluation();
+        }}
+        menuItems={menuItems}
+      >
+        <PsicoTestesContainer
+          sessions={sessions}
+          onStartNewEvaluation={handleStartNewEvaluation}
+          onSelectSession={handleSelectSession}
+        />
+      </PsicoTestesLayout>
+    );
+  }
+
+  // ========================================
+  // MODO CADASTRO: Formulário de novo paciente
+  // ========================================
+  if (showCadastro) {
+    return (
+      <PsicoTestesLayout
+        activeView="dashboard"
+        setActiveView={() => { }}
+        menuItems={menuItems}
+      >
+        <CadastroSimples
+          onSave={handleSaveCadastro}
+          onCancel={() => setShowCadastro(false)}
+        />
+      </PsicoTestesLayout>
+    );
+  }
+
+  // ========================================
+  // MODO TESTE: VB-MAPP em tela cheia
+  // ========================================
   return (
     <div className="app-container" key={`app-${refreshTrigger}`}>
       <SessionController
@@ -137,6 +173,7 @@ export default function App() {
         onUpdateSession={handleUpdateSession}
         onBackToList={handleBackToList}
         onSelectSession={handleSelectSession}
+        getHistoricoSessoes={getHistoricoSessoes}
         data={VBMAPP_DATA}
         includeGraphs={true}
         includePEI={false}

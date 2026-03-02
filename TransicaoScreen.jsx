@@ -1,173 +1,403 @@
 import React, { useState, useMemo } from 'react';
 
-/* CATEGORIAS FIXAS DE TRANSIÇÃO (IMUTÁVEIS) */
-const CATEGORIAS_TRANSICAO = [
-  {
-    id: 'cat_01',
-    nome: 'Domínio de linguagem, social, comportamental e independência acadêmica',
-    itens_manuais: 3  // Itens 6, 7, 8
-  },
-  {
-    id: 'cat_02',
-    nome: 'Habilidades para aprender',
-    itens_manuais: 3  // Itens 6, 7, 8
-  },
-  {
-    id: 'cat_03',
-    nome: 'Habilidades de autocuidado, espontaneidade e independência',
-    itens_manuais: 3  // Itens 6, 7, 8
-  }
-];
+/*
+  VB-MAPP ANÁLISE DE TRANSIÇÃO - 18 ITENS OFICIAIS
+  
+  Estrutura:
+  - 3 Categorias principais
+  - Itens 1-5 de cada categoria: AUTOMÁTICOS (calculados dos Milestones/Barreiras)
+  - Item 6 em diante: MANUAIS (preenchidos pelo avaliador)
+  
+  IMPORTANTE: Itens 1-6 são extremamente relevantes para decisão de transição
+*/
 
-/* COMPONENTE: TELA 4 — Análise de Transição */
-export default function TransicaoScreen({ sessionInfo, onFinalize, onBack, isReadOnly }) {
-  const [avaliacoes, setAvaliacoes] = useState(() => {
-    if (sessionInfo?.transicao?.categorias) {
-      const initial = {};
-      sessionInfo.transicao.categorias.forEach(c => {
-        if (sessionInfo.avaliacoes_transicao_raw) {
-          initial[c.categoria_id] = sessionInfo.avaliacoes_transicao_raw[c.categoria_id];
-        } else {
-          initial[c.categoria_id] = { observacao: c.observacao };
+const TRANSICAO_ESTRUTURA = {
+  categorias: [
+    {
+      id: 'cat_1',
+      numero: 1,
+      nome: 'Domínio de linguagem, social, comportamental e independência acadêmica',
+      itens: [
+        {
+          id: 'item_1',
+          numero: 1,
+          nome: 'Pontuação total dos Marcos e independência acadêmica',
+          tipo: 'automatico',
+          fonte: 'milestones_total',
+          descricao: 'Calculado automaticamente da pontuação de Milestones'
+        },
+        {
+          id: 'item_2',
+          numero: 2,
+          nome: 'Pontuação geral das Barreiras',
+          tipo: 'automatico',
+          fonte: 'barreiras_total',
+          descricao: 'Calculado automaticamente do escore de Barreiras (invertido: menor = melhor)'
+        },
+        {
+          id: 'item_3',
+          numero: 3,
+          nome: 'Pontuação das barreiras de comportamento negativo e controle instrucional',
+          tipo: 'automatico',
+          fonte: 'barreiras_1_2',
+          descricao: 'Soma das barreiras 1 (Comportamento negativo) e 2 (Controle instrucional)'
+        },
+        {
+          id: 'item_4',
+          numero: 4,
+          nome: 'Habilidade de grupo e rotina de sala de aula',
+          tipo: 'automatico',
+          fonte: 'milestones_rotina_grupo',
+          descricao: 'Pontuação do domínio Rotinas de Classe e Habilidades de Grupo'
+        },
+        {
+          id: 'item_5',
+          numero: 5,
+          nome: 'Comportamento social e Brincar Social',
+          tipo: 'automatico',
+          fonte: 'milestones_social',
+          descricao: 'Pontuação do domínio Comportamento Social e Brincar Social'
+        },
+        {
+          id: 'item_6',
+          numero: 6,
+          nome: 'Trabalha independente em tarefas acadêmicas',
+          tipo: 'manual',
+          niveis: [
+            '1. Trabalha indep. por 30 segundos com 1 dica de adulto',
+            '2. Trabalha indep. por 1 minuto com 1 solicitação de adulto',
+            '3. Trabalha indep. por 2 minutos sem solicitação de adulto',
+            '4. Trabalha indep. por 5 minutos sem solicitação de adulto',
+            '5. Trabalha indep. por 10 minutos sem solicitação de adulto'
+          ]
         }
-      });
-      return initial;
+      ]
+    },
+    {
+      id: 'cat_2',
+      numero: 2,
+      nome: 'Habilidades para aprender',
+      itens: [
+        {
+          id: 'item_7',
+          numero: 7,
+          nome: 'Generalização de Habilidades',
+          tipo: 'manual',
+          niveis: [
+            '1. Generaliza algumas hab. para pessoas diferentes e ao longo do tempo; mas não é fácil em materiais',
+            '2. Generaliza resposta para novos materiais, após treinamento extensivo com múltiplos exemplares',
+            '3. Generaliza estímulos espontaneamente no ambiente em 10 ocasiões',
+            '4. Generaliza respostas espontâneas em ambiente natural em 10 ocasiões',
+            '5. Demonstra generalização de estímulo e resposta na primeira ou segunda tentativa'
+          ]
+        },
+        {
+          id: 'item_8',
+          numero: 8,
+          nome: 'Itens e eventos que funcionam como reforçadores',
+          tipo: 'manual',
+          niveis: [
+            '1. Reforçadores são principalmente comestíveis, líquidos e contato físico (motivadores não aprendidos)',
+            '2. Reforçadores são tangíveis, sensoriais ou manipulativos',
+            '3. Reforçadores são sociais, de lugares ou mediados por colegas',
+            '4. Reforçadores são intermitentes, sociais, automáticos e envolvem ampla gama de itens',
+            '5. Reforçadores são intermitentes, sociais, adequados à idade, variados e envolvem informações verbais'
+          ]
+        },
+        {
+          id: 'item_9',
+          numero: 9,
+          nome: 'Taxa de aquisição de novas habilidades',
+          tipo: 'manual',
+          niveis: [
+            '1. Requer duas ou mais semanas de treino e centenas de tentativas para adquirir nova habilidade',
+            '2. Requer no mínimo uma semana de treino e 100+ tentativas para adquirir nova habilidade',
+            '3. Adquire novas habilidades por semana com média de menos de 50 tentativas',
+            '4. Adquire novas habilidades por semana com média de menos de 25 tentativas',
+            '5. Novas habilidades diárias com média de 5 tentativas ou menos'
+          ]
+        },
+        {
+          id: 'item_10',
+          numero: 10,
+          nome: 'Taxa de retenção de novas habilidades',
+          tipo: 'manual',
+          niveis: [
+            '1. Retém nova hab. por pelo menos 10 minutos após acertá-la em sessão de ensino',
+            '2. Retém nova hab. por pelo menos 1 hora após acertá-la em sessão de ensino',
+            '3. Retém nova hab. por 24 horas após acertá-la com 5 ou menos tentativas de manutenção',
+            '4. Retém hab. adquiridas após 24 horas sem manutenção',
+            '5. Retém habilidades por uma semana sem testes de manutenção'
+          ]
+        },
+        {
+          id: 'item_11',
+          numero: 11,
+          nome: 'Aprendizagem em ambiente natural',
+          tipo: 'manual',
+          niveis: [
+            '1. 2 novas hab. motoras no ambiente natural sem ensino intensivo',
+            '2. 5 novos mandos ou tatos no ambiente natural sem ensino intensivo',
+            '3. Adquire 25 novos mandos ou tatos no ambiente natural sem ensino intensivo',
+            '4. Adquire 25 novos intraverbais no ambiente natural sem ensino intensivo',
+            '5. Aprende novas habilidades diariamente em ambiente natural ou grupo, sem ensino intensivo'
+          ]
+        },
+        {
+          id: 'item_12',
+          numero: 12,
+          nome: 'Transferência entre operantes verbais sem treino',
+          tipo: 'manual',
+          niveis: [
+            '1. Demonstra transferência ecoica para mando ou tato para 2 respostas com 2 ou menos tentativas',
+            '2. Demonstra transferência ecoica para mando ou tato para 5 respostas sem tentativas',
+            '3. Demonstra tato para transferência de mando para 10 respostas sem treinamento',
+            '4. Demonstra tato para transferência intraverbal para 10 tópicos sem treinamento',
+            '5. Demonstra transferência diária, envolvendo classes gramaticais avançadas'
+          ]
+        }
+      ]
+    },
+    {
+      id: 'cat_3',
+      numero: 3,
+      nome: 'Habilidades de autocuidado, espontaneidade e independência',
+      itens: [
+        {
+          id: 'item_13',
+          numero: 13,
+          nome: 'Adaptabilidade à mudança',
+          tipo: 'manual',
+          niveis: [
+            '1. Adapta-se a pequenas mudanças com preparação verbal, mas pode demonstrar comportamento negativo',
+            '2. Aceita pequenas mudanças, mostra angústia considerável, requer preparação substancial',
+            '3. Fica irritado e reclama das mudanças, pode perseverar, mas acaba acompanhando',
+            '4. Adapta-se a mudanças rapidamente e sem comportamento negativo',
+            '5. A criança lida bem com mudanças na rotina e ignora distrações'
+          ]
+        },
+        {
+          id: 'item_14',
+          numero: 14,
+          nome: 'Comportamento Espontâneo',
+          tipo: 'manual',
+          niveis: [
+            '1. Emite comportamentos espontaneamente, mas maioria das habilidades são solicitadas',
+            '2. Emite muitos comportamentos espontâneos, mas são principalmente não-verbais',
+            '3. Mandos e tatos espontaneamente várias vezes ao dia',
+            '4. Emite espontaneamente mando, tato, comportamento social intraverbal várias vezes ao dia',
+            '5. Emite comportamentos espontâneos apropriados na maioria das 16 áreas da Avaliação de Marcos'
+          ]
+        },
+        {
+          id: 'item_15',
+          numero: 15,
+          nome: 'Brincar independente e habilidades de lazer',
+          tipo: 'manual',
+          niveis: [
+            '1. Obtém 3 pontos em brincar independente na Avaliação de Marcos',
+            '2. Obtém 5 pontos em brincar independente na Avaliação de Marcos',
+            '3. Obtém 8 pontos em brincar independente na Avaliação de Marcos',
+            '4. Obtém 11 pontos em brincar independente na Avaliação de Marcos',
+            '5. Obtém 14 pontos em brincar independente na Avaliação de Marcos'
+          ]
+        },
+        {
+          id: 'item_16',
+          numero: 16,
+          nome: 'Habilidades Gerais de Autocuidado',
+          tipo: 'manual',
+          niveis: [
+            '1. Sem autoajuda independente, mas não se envolve em comportamentos negativos',
+            '2. Requer instruções verbais ou físicas para completar maioria das tarefas de autoajuda',
+            '3. Requer principalmente instruções verbais, mas tentará aproximações',
+            '4. Inicia algumas tarefas de autoajuda e geralmente tenta aproximações',
+            '5. Inicia aproximações para maioria das habilidades e generaliza'
+          ]
+        },
+        {
+          id: 'item_17',
+          numero: 17,
+          nome: 'Habilidades de Higiene',
+          tipo: 'manual',
+          niveis: [
+            '1. Ainda usa fralda, mas demonstra prontidão para treinamento de toalete',
+            '2. Treinamento do toalete começou, ocasionalmente urina quando sentado, ainda usa fralda',
+            '3. Bexiga treinada durante o dia, tem acidentes ocasionais, precisa de instruções',
+            '4. Bexiga e intestino treinados, mas precisa de instruções e assistência',
+            '5. Inicia ou pede para usar o banheiro e completa independentemente todas as etapas'
+          ]
+        },
+        {
+          id: 'item_18',
+          numero: 18,
+          nome: 'Habilidades de Alimentação',
+          tipo: 'manual',
+          niveis: [
+            '1. Realiza algumas alimentações independentes, mas requer muitos estímulos físicos',
+            '2. Come de forma independente comida com dedos, mas requer arranjo e orientação verbal',
+            '3. Pega comida em lancheira, come, mas requer orientação verbal de adulto',
+            '4. Usa colher de forma independente, come sem instruções, faz bagunça mínima',
+            '5. Obtém alimentos, come e usa utensílios de forma independente'
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+/* COMPONENTE: TELA 4 — Análise de Transição (18 itens oficiais VB-MAPP) */
+export default function TransicaoScreen({ sessionInfo, milestonesData, barreirasData, onFinalize, onBack, isReadOnly }) {
+
+  // Estado para itens manuais
+  const [avaliacoes, setAvaliacoes] = useState(() => {
+    if (sessionInfo?.transicao) {
+      return sessionInfo.transicao.itens_manuais || {};
     }
     return {};
   });
 
-  // ✅ EXTRAIR DADOS COM FALLBACK SEGURO
-  const dadosConsolidados = useMemo(() => {
-    // Calcular percentuais a partir dos scores se não existir
-    let percentuais = sessionInfo?.percentuais?.geral || null;
+  // Calcular valores automáticos baseados em Milestones e Barreiras
+  const valoresAutomaticos = useMemo(() => {
+    const scores = milestonesData?.scores_snapshot || sessionInfo?.scores_snapshot || {};
+    const barreiras = barreirasData?.barreiras || sessionInfo?.barreiras || [];
 
-    if (!percentuais && sessionInfo?.scores_snapshot) {
-      const scores = sessionInfo.scores_snapshot;
-      const total = Object.keys(scores).length || 1;
-      const dominados = Object.values(scores).filter(s => s === 'dominado').length;
-      const emergentes = Object.values(scores).filter(s => s === 'emergente').length;
-      const naoObs = Object.values(scores).filter(s => s === 'nao_observado').length;
+    // Contar milestones dominados
+    let totalDominados = 0;
+    let totalMilestones = 0;
+    let pontosRotina = 0;
+    let pontosSocial = 0;
+    let pontosBrincar = 0;
 
-      percentuais = {
-        dominado: (dominados / total) * 100,
-        emergente: (emergentes / total) * 100,
-        nao_observado: (naoObs / total) * 100
-      };
-    }
+    Object.entries(scores).forEach(([blockId, status]) => {
+      totalMilestones++;
+      if (status === 'dominado') {
+        totalDominados++;
 
-    // Fallback final
-    if (!percentuais) {
-      percentuais = { dominado: 0, emergente: 0, nao_observado: 0 };
-    }
-
-    return {
-      percentuais,
-      escoreBarreiras: sessionInfo?.escore_total_barreiras || 0,
-      lacunas: sessionInfo?.lacunas || []
-    };
-  }, [sessionInfo]);
-
-  // Calcular itens automáticos 1-5 com base nos dados anteriores
-  const itensAutomaticos = useMemo(() => {
-    const { percentuais, escoreBarreiras, lacunas } = dadosConsolidados;
-
-    // Função auxiliar para converter percentual em pontuação 0-5
-    const percentualParaPontos = (percentual) => {
-      const p = Number(percentual) || 0;
-      if (p >= 90) return 5;
-      if (p >= 75) return 4;
-      if (p >= 60) return 3;
-      if (p >= 40) return 2;
-      if (p >= 20) return 1;
-      return 0;
-    };
-
-    // Função auxiliar para inverter barreiras (quanto menos barreira, melhor)
-    const barreirasParaPontos = (escore, max = 40) => {
-      const e = Number(escore) || 0;
-      const percentual = ((max - e) / max) * 100;
-      return percentualParaPontos(percentual);
-    };
-
-    const dominado = Number(percentuais.dominado) || 0;
-    const naoObs = Number(percentuais.nao_observado) || 0;
-    const numLacunas = lacunas.length || 0;
-
-    return {
-      cat_01: [
-        percentualParaPontos(dominado),  // Item 1: Domínio geral
-        Math.max(0, Math.min(5, Math.floor(5 - (numLacunas / 30)))),  // Item 2: Lacunas
-        barreirasParaPontos(escoreBarreiras),  // Item 3: Barreiras
-        percentualParaPontos(dominado * 0.9),  // Item 4: Ajuste
-        Math.max(0, Math.min(5, Math.floor((dominado + (100 - (escoreBarreiras / 40 * 100))) / 40)))  // Item 5: Média
-      ],
-      cat_02: [
-        percentualParaPontos(dominado * 0.95),  // Item 1
-        Math.max(0, 5 - Math.floor(escoreBarreiras / 8)),  // Item 2
-        percentualParaPontos(dominado * 0.85),  // Item 3
-        Math.max(0, Math.min(5, Math.floor(5 - (numLacunas / 35)))),  // Item 4
-        barreirasParaPontos(escoreBarreiras, 40)  // Item 5
-      ],
-      cat_03: [
-        percentualParaPontos(dominado * 0.8),  // Item 1
-        Math.max(0, Math.min(5, Math.floor(dominado / 20))),  // Item 2
-        percentualParaPontos((100 - naoObs)),  // Item 3
-        barreirasParaPontos(escoreBarreiras, 40),  // Item 4
-        Math.max(0, Math.min(5, Math.floor(dominado / 18)))  // Item 5
-      ]
-    };
-  }, [dadosConsolidados]);
-
-  // Calcular escores
-  const calculos = useMemo(() => {
-    const escoresPorCategoria = CATEGORIAS_TRANSICAO.map(cat => {
-      const automaticos = itensAutomaticos[cat.id] || [0, 0, 0, 0, 0];
-      const somaAutomaticos = automaticos.reduce((sum, val) => sum + val, 0);
-
-      const av = avaliacoes[cat.id] || {};
-      const manuais = [];
-      for (let i = 0; i < cat.itens_manuais; i++) {
-        manuais.push(av[`item_${6 + i}`] ?? null);
+        // Verificar domínio específico pelo block_id
+        if (blockId.includes('DOM11') || blockId.toLowerCase().includes('rotina')) {
+          pontosRotina++;
+        }
+        if (blockId.includes('DOM02') || blockId.toLowerCase().includes('social')) {
+          pontosSocial++;
+        }
+        if (blockId.includes('DOM01') || blockId.toLowerCase().includes('brincar')) {
+          pontosBrincar++;
+        }
       }
-      const somaManuais = manuais.reduce((sum, val) => sum + (val !== null ? val : 0), 0);
-      const manuaisCompletos = manuais.every(v => v !== null && v !== undefined);
-
-      return {
-        categoria_id: cat.id,
-        nome: cat.nome,
-        escore_automatico: somaAutomaticos,
-        escore_manual: somaManuais,
-        escore_total: somaAutomaticos + somaManuais,
-        observacao: av.observacao || '',
-        manuais_completos: manuaisCompletos,
-        observacao_completa: av.observacao && av.observacao.trim().length >= 10
-      };
     });
 
-    const todasCompletas = escoresPorCategoria.every(c => c.manuais_completos && c.observacao_completa);
-    const escoreTotal = escoresPorCategoria.reduce((sum, c) => sum + c.escore_total, 0);
+    // Calcular escore de barreiras
+    let escoreBarreirasTotal = 0;
+    let escoreBarreiras1_2 = 0;
+
+    barreiras.forEach(b => {
+      const pont = b.pontuacao || 0;
+      escoreBarreirasTotal += pont;
+
+      // Barreiras 1 e 2 (Comportamento negativo e Controle instrucional)
+      if (b.categoria_id === 'bar_01' || b.categoria_id === 'bar_02') {
+        escoreBarreiras1_2 += pont;
+      }
+    });
+
+    // Converter para escala de 0-5 para os itens automáticos
+    // Item 1: Milestones (percentual convertido para 1-5)
+    const percentDominados = totalMilestones > 0 ? (totalDominados / totalMilestones) * 100 : 0;
+    const item1Score = Math.min(5, Math.max(0, Math.round(percentDominados / 20)));
+
+    // Item 2: Barreiras (invertido - menor escore de barreiras = maior pontuação)
+    // Escore máximo de barreiras = 96, então invertemos
+    const item2Score = Math.min(5, Math.max(0, Math.round((96 - escoreBarreirasTotal) / 19)));
+
+    // Item 3: Barreiras 1 e 2 (invertido)
+    // Máximo = 8, então invertemos
+    const item3Score = Math.min(5, Math.max(0, Math.round((8 - escoreBarreiras1_2) / 1.6)));
+
+    // Item 4: Rotinas de Classe (máximo 10 pontos no VB-MAPP)
+    const item4Score = Math.min(5, Math.max(0, Math.round(pontosRotina / 2)));
+
+    // Item 5: Comportamento Social (máximo 15 pontos no VB-MAPP)
+    const item5Score = Math.min(5, Math.max(0, Math.round(pontosSocial / 3)));
 
     return {
-      escoresPorCategoria,
-      todasCompletas,
-      escoreTotal
+      item_1: item1Score,
+      item_2: item2Score,
+      item_3: item3Score,
+      item_4: item4Score,
+      item_5: item5Score,
+      // Dados brutos para exibição
+      raw: {
+        totalDominados,
+        totalMilestones,
+        percentDominados: percentDominados.toFixed(1),
+        escoreBarreirasTotal,
+        escoreBarreiras1_2,
+        pontosRotina,
+        pontosSocial,
+        pontosBrincar
+      }
     };
-  }, [avaliacoes, itensAutomaticos]);
+  }, [milestonesData, barreirasData, sessionInfo]);
 
-  const setAvaliacao = (categoriaId, field, value) => {
+  // Calcular escores por categoria e total
+  const escores = useMemo(() => {
+    const categorias = {};
+    let totalGeral = 0;
+
+    TRANSICAO_ESTRUTURA.categorias.forEach(cat => {
+      let escoreCat = 0;
+      let automaticosCat = 0;
+      let manuaisCat = 0;
+
+      cat.itens.forEach(item => {
+        if (item.tipo === 'automatico') {
+          const valor = valoresAutomaticos[item.id] || 0;
+          escoreCat += valor;
+          automaticosCat += valor;
+        } else {
+          const valor = avaliacoes[item.id]?.pontuacao || 0;
+          escoreCat += valor;
+          manuaisCat += valor;
+        }
+      });
+
+      categorias[cat.id] = {
+        total: escoreCat,
+        automaticos: automaticosCat,
+        manuais: manuaisCat
+      };
+      totalGeral += escoreCat;
+    });
+
+    return { categorias, totalGeral };
+  }, [avaliacoes, valoresAutomaticos]);
+
+  // Verificar se todos os itens manuais foram preenchidos
+  const itensManuais = TRANSICAO_ESTRUTURA.categorias.flatMap(c =>
+    c.itens.filter(i => i.tipo === 'manual')
+  );
+
+  const manuaisPreenchidos = itensManuais.filter(item =>
+    avaliacoes[item.id]?.pontuacao !== undefined && avaliacoes[item.id]?.pontuacao !== null
+  ).length;
+
+  const canFinalize = manuaisPreenchidos === itensManuais.length;
+
+  const setAvaliacao = (itemId, field, value) => {
     if (isReadOnly) return;
     setAvaliacoes(prev => ({
       ...prev,
-      [categoriaId]: {
-        ...prev[categoriaId],
+      [itemId]: {
+        ...prev[itemId],
         [field]: value
       }
     }));
   };
 
   const handleFinalize = () => {
-    if (!calculos.todasCompletas) {
-      alert('Você precisa completar TODAS as categorias (itens manuais + observação).');
+    if (!canFinalize) {
+      alert(`Preencha todos os ${itensManuais.length} itens manuais. Faltam ${itensManuais.length - manuaisPreenchidos}.`);
       return;
     }
 
@@ -176,27 +406,14 @@ export default function TransicaoScreen({ sessionInfo, onFinalize, onBack, isRea
       child_name: sessionInfo.child_name,
       date_transicao: new Date().toISOString(),
       transicao_completa: true,
-      transicao: {
-        categorias: calculos.escoresPorCategoria.map(c => ({
-          nome: c.nome,
-          categoria_id: c.categoria_id,
-          escore: c.escore_total,
-          observacao: c.observacao.trim()
-        })),
-        escore_total: calculos.escoreTotal
-      },
-      avaliacoes_transicao_raw: avaliacoes,
-      schema_version: 'vbmapp_transicao_v1'
+      valores_automaticos: valoresAutomaticos,
+      itens_manuais: avaliacoes,
+      escores_por_categoria: escores.categorias,
+      escore_total_transicao: escores.totalGeral,
+      schema_version: 'vbmapp_transicao_v2'
     };
 
     onFinalize(transicaoData);
-  };
-
-  // ✅ HELPER PARA FORMATAR NÚMERO SEGURO
-  const formatNumber = (value, decimals = 1) => {
-    const num = Number(value);
-    if (isNaN(num)) return '0';
-    return num.toFixed(decimals);
   };
 
   return (
@@ -207,156 +424,144 @@ export default function TransicaoScreen({ sessionInfo, onFinalize, onBack, isRea
       <header className="transicao-header">
         <div className="header-content">
           <h1>TELA 4 — Análise de Transição</h1>
-          <p>Avaliação de Prontidão para Transição Educacional</p>
+          <p>VB-MAPP Transition Assessment (18 itens)</p>
           <div className="session-info">
-            <strong>{sessionInfo?.child_name || 'Criança'}</strong> - Avaliado em {new Date(sessionInfo?.date || Date.now()).toLocaleDateString('pt-BR')}
+            <strong>{sessionInfo.child_name}</strong> • {new Date().toLocaleDateString('pt-BR')}
           </div>
         </div>
         {onBack && (
-          <button className="btn btn-back" onClick={onBack}>
-            ← Voltar
-          </button>
+          <button className="btn-back" onClick={onBack}>← Voltar</button>
         )}
       </header>
 
-      {/* INFO CONSOLIDADA */}
-      <section className="info-panel">
-        <h2>Dados Consolidados</h2>
-        <div className="info-grid">
-          <div className="info-card">
-            <div className="info-label">Milestones Dominados</div>
-            <div className="info-value">{formatNumber(dadosConsolidados.percentuais.dominado)}%</div>
+      {/* RESUMO DOS DADOS */}
+      <section className="dados-resumo">
+        <h2>📊 Dados Consolidados (Base para Cálculos Automáticos)</h2>
+        <div className="dados-grid">
+          <div className="dado-card">
+            <span className="dado-valor">{valoresAutomaticos.raw.percentDominados}%</span>
+            <span className="dado-label">Milestones Dominados</span>
+            <span className="dado-detalhe">{valoresAutomaticos.raw.totalDominados} de {valoresAutomaticos.raw.totalMilestones}</span>
           </div>
-          <div className="info-card">
-            <div className="info-label">Lacunas Identificadas</div>
-            <div className="info-value">{dadosConsolidados.lacunas.length}</div>
+          <div className="dado-card">
+            <span className="dado-valor">{valoresAutomaticos.raw.escoreBarreirasTotal}</span>
+            <span className="dado-label">Escore Barreiras</span>
+            <span className="dado-detalhe">máx: 96 (menor = melhor)</span>
           </div>
-          <div className="info-card">
-            <div className="info-label">Escore de Barreiras</div>
-            <div className="info-value">{dadosConsolidados.escoreBarreiras} / 40</div>
+          <div className="dado-card">
+            <span className="dado-valor">{valoresAutomaticos.raw.escoreBarreiras1_2}</span>
+            <span className="dado-label">Barreiras 1+2</span>
+            <span className="dado-detalhe">Comp. Negativo + Controle</span>
           </div>
-          <div className="info-card">
-            <div className="info-label">Escore de Transição</div>
-            <div className="info-value">{calculos.escoreTotal}</div>
+          <div className="dado-card">
+            <span className="dado-valor">{valoresAutomaticos.raw.pontosSocial}</span>
+            <span className="dado-label">Social</span>
+            <span className="dado-detalhe">Pontos dominados</span>
           </div>
         </div>
       </section>
 
       {/* CATEGORIAS */}
       <div className="categorias-container">
-        {CATEGORIAS_TRANSICAO.map((categoria, catIndex) => {
-          const calc = calculos.escoresPorCategoria[catIndex];
-          const av = avaliacoes[categoria.id] || {};
-          const automaticos = itensAutomaticos[categoria.id];
-          const isCompleta = calc.manuais_completos && calc.observacao_completa;
+        {TRANSICAO_ESTRUTURA.categorias.map(categoria => {
+          const escoreCat = escores.categorias[categoria.id];
 
           return (
-            <article key={categoria.id} className={`categoria-card ${isCompleta ? 'completa' : 'pendente'}`}>
+            <section key={categoria.id} className="categoria-section">
               <div className="categoria-header">
-                <div className="categoria-number">#{catIndex + 1}</div>
-                <div className="categoria-info">
-                  <h3>{categoria.nome}</h3>
-                  <div className="escore-categoria">
-                    Escore: {calc.escore_total} pontos
-                    <span className="escore-detail">
-                      (Automático: {calc.escore_automatico} + Manual: {calc.escore_manual})
-                    </span>
-                  </div>
-                </div>
-                {isCompleta && <div className="check-badge">✓</div>}
-              </div>
-
-              {/* ITENS AUTOMÁTICOS */}
-              <div className="itens-automaticos">
-                <h4>Itens Automáticos (1-5)</h4>
-                <div className="itens-grid">
-                  {automaticos.map((pontos, idx) => (
-                    <div key={idx} className="item-automatico">
-                      <span className="item-label">Item {idx + 1}</span>
-                      <span className="item-pontos">{pontos}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* ITENS MANUAIS */}
-              <div className="itens-manuais">
-                <h4>Itens Manuais (6-{5 + categoria.itens_manuais}) *</h4>
-                <div className="manuais-grid">
-                  {Array.from({ length: categoria.itens_manuais }).map((_, idx) => {
-                    const itemKey = `item_${6 + idx}`;
-                    const valor = av[itemKey];
-
-                    return (
-                      <div key={itemKey} className="manual-item">
-                        <label className="manual-label">Item {6 + idx}:</label>
-                        <div className="pontuacao-select">
-                          {[0, 1, 2, 3, 4, 5].map(pontos => (
-                            <label key={pontos} className="radio-pontuacao">
-                              <input
-                                type="radio"
-                                name={`${categoria.id}_${itemKey}`}
-                                value={pontos}
-                                checked={valor === pontos}
-                                onChange={() => setAvaliacao(categoria.id, itemKey, pontos)}
-                                disabled={isReadOnly}
-                              />
-                              <span className="radio-box">{pontos}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* OBSERVAÇÃO */}
-              <div className="form-group">
-                <label className="form-label">
-                  Observação *
-                  <span className="char-count">
-                    {(av.observacao || '').length} caracteres (mínimo 10)
+                <div className="categoria-numero">Categoria {categoria.numero}</div>
+                <h3>{categoria.nome}</h3>
+                <div className="categoria-escore">
+                  <span className="escore-total">{escoreCat.total}</span>
+                  <span className="escore-detalhe">
+                    (Auto: {escoreCat.automaticos} + Manual: {escoreCat.manuais})
                   </span>
-                </label>
-                <textarea
-                  className="form-textarea"
-                  placeholder="Descreva evidências e considerações sobre esta categoria de transição..."
-                  value={av.observacao || ''}
-                  onChange={(e) => setAvaliacao(categoria.id, 'observacao', e.target.value)}
-                  rows={3}
-                  disabled={isReadOnly}
-                />
-                {av.observacao && av.observacao.trim().length > 0 && av.observacao.trim().length < 10 && (
-                  <div className="field-error">
-                    Observação deve ter no mínimo 10 caracteres
-                  </div>
-                )}
+                </div>
               </div>
-            </article>
+
+              <div className="itens-list">
+                {categoria.itens.map(item => {
+                  const isAuto = item.tipo === 'automatico';
+                  const valorAuto = valoresAutomaticos[item.id];
+                  const valorManual = avaliacoes[item.id]?.pontuacao;
+                  const valor = isAuto ? valorAuto : valorManual;
+
+                  return (
+                    <div key={item.id} className={`item-card ${isAuto ? 'automatico' : 'manual'}`}>
+                      <div className="item-header">
+                        <span className="item-numero">{item.numero}</span>
+                        <span className="item-nome">{item.nome}</span>
+                        <span className={`item-tipo-badge ${isAuto ? 'auto' : 'manual'}`}>
+                          {isAuto ? '⚡ Auto' : '✏️ Manual'}
+                        </span>
+                      </div>
+
+                      {isAuto ? (
+                        <div className="item-automatico">
+                          <div className="auto-valor">
+                            <span className="valor-numero">{valor || 0}</span>
+                            <span className="valor-label">pontos</span>
+                          </div>
+                          <p className="auto-descricao">{item.descricao}</p>
+                        </div>
+                      ) : (
+                        <div className="item-manual">
+                          <div className="niveis-grid">
+                            {item.niveis.map((nivel, idx) => {
+                              const pontos = idx + 1;
+                              const isSelected = valorManual === pontos;
+
+                              return (
+                                <label
+                                  key={idx}
+                                  className={`nivel-option ${isSelected ? 'selected' : ''}`}
+                                >
+                                  <input
+                                    type="radio"
+                                    name={`item_${item.id}`}
+                                    value={pontos}
+                                    checked={isSelected}
+                                    onChange={() => setAvaliacao(item.id, 'pontuacao', pontos)}
+                                    disabled={isReadOnly}
+                                  />
+                                  <span className="nivel-numero">{pontos}</span>
+                                  <span className="nivel-texto">{nivel}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
           );
         })}
       </div>
 
-      {/* ACTION PANEL */}
-      <section className="action-panel">
-        <div className="escore-display">
-          <span className="escore-label">Escore Total de Transição:</span>
-          <span className="escore-value">{calculos.escoreTotal}</span>
+      {/* FOOTER */}
+      <footer className="action-footer">
+        <div className="footer-info">
+          <div className="escore-display">
+            <span className="escore-label">Escore Total:</span>
+            <span className="escore-value">{escores.totalGeral}</span>
+          </div>
+          <div className="progresso-manual">
+            {manuaisPreenchidos} / {itensManuais.length} itens manuais
+          </div>
         </div>
         {!isReadOnly && (
           <button
-            className={`btn btn-finalize ${calculos.todasCompletas ? 'enabled' : 'disabled'}`}
+            className={`btn-finalize ${canFinalize ? 'enabled' : 'disabled'}`}
             onClick={handleFinalize}
-            disabled={!calculos.todasCompletas}
+            disabled={!canFinalize}
           >
-            ✓ Finalizar Análise de Transição
+            {canFinalize ? '✓ Finalizar Transição' : `Faltam ${itensManuais.length - manuaisPreenchidos} itens`}
           </button>
         )}
-        {isReadOnly && (
-          <div className="read-only-badge">🔒 MODO VISUALIZAÇÃO</div>
-        )}
-      </section>
+      </footer>
     </div>
   );
 }
@@ -364,416 +569,329 @@ export default function TransicaoScreen({ sessionInfo, onFinalize, onBack, isRea
 function getTransicaoStyles() {
   return `
     .transicao-screen {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 2rem 1rem;
+      background: #f0fdf4;
+      min-height: 100vh;
+      padding-bottom: 100px;
+      font-family: 'Inter', system-ui, sans-serif;
     }
 
     .transicao-header {
-      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
       color: white;
-      padding: 2rem;
-      border-radius: 12px;
-      margin-bottom: 2rem;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      padding: 25px 5%;
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 1rem;
+      gap: 15px;
     }
 
-    .transicao-header h1 {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-      font-weight: 700;
+    .header-content h1 { font-size: 22px; margin: 0; font-weight: 800; }
+    .header-content p { opacity: 0.8; font-size: 13px; margin: 4px 0 0 0; }
+    .session-info { 
+      background: rgba(255,255,255,0.15); 
+      padding: 4px 12px; 
+      border-radius: 6px; 
+      font-size: 12px; 
+      margin-top: 8px;
+      display: inline-block;
     }
 
-    .transicao-header p {
-      opacity: 0.95;
-      font-size: 1rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .session-info {
-      padding: 0.5rem 1rem;
-      background: rgba(255,255,255,0.15);
-      border-radius: 6px;
-      font-size: 0.9rem;
-      margin-top: 0.5rem;
-    }
-
-    .info-panel {
-      background: white;
-      padding: 2rem;
-      border-radius: 12px;
-      margin-bottom: 2rem;
-      border: 1px solid #e5e7eb;
-    }
-
-    .info-panel h2 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-      color: #111827;
-    }
-
-    .info-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-    }
-
-    .info-card {
-      padding: 1.5rem;
-      border-radius: 12px;
-      text-align: center;
-      background: linear-gradient(135deg, #ddd6fe 0%, #c7d2fe 100%);
-    }
-
-    .info-label {
-      font-size: 0.875rem;
+    .btn-back {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
       font-weight: 600;
-      margin-bottom: 0.5rem;
-      color: #4338ca;
     }
 
-    .info-value {
-      font-size: 2rem;
-      font-weight: 700;
-      color: #3730a3;
+    .dados-resumo {
+      background: white;
+      margin: 20px 5%;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
+
+    .dados-resumo h2 {
+      font-size: 14px;
+      color: #059669;
+      margin: 0 0 15px 0;
+      font-weight: 700;
+    }
+
+    .dados-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+    }
+
+    .dado-card {
+      background: #ecfdf5;
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .dado-valor { display: block; font-size: 24px; font-weight: 800; color: #059669; }
+    .dado-label { display: block; font-size: 11px; color: #047857; font-weight: 600; margin-top: 4px; }
+    .dado-detalhe { display: block; font-size: 10px; color: #6b7280; margin-top: 2px; }
 
     .categorias-container {
+      padding: 0 5%;
       display: flex;
       flex-direction: column;
-      gap: 2rem;
-      margin-bottom: 2rem;
+      gap: 25px;
     }
 
-    .categoria-card {
+    .categoria-section {
       background: white;
-      padding: 2rem;
       border-radius: 12px;
-      border: 2px solid #e5e7eb;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-
-    .categoria-card.pendente {
-      border-color: #f59e0b;
-    }
-
-    .categoria-card.completa {
-      border-color: #6366f1;
-      background: #eef2ff;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
 
     .categoria-header {
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+      padding: 15px 20px;
       display: flex;
-      gap: 1rem;
-      margin-bottom: 2rem;
-      align-items: flex-start;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
     }
 
-    .categoria-number {
-      background: #6366f1;
+    .categoria-numero {
+      background: #059669;
       color: white;
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
       font-weight: 700;
-      font-size: 1.25rem;
-      min-width: 60px;
-      text-align: center;
     }
 
-    .categoria-info {
+    .categoria-header h3 {
       flex: 1;
-    }
-
-    .categoria-info h3 {
-      font-size: 1.25rem;
+      font-size: 14px;
       font-weight: 700;
-      color: #111827;
-      margin: 0 0 0.5rem 0;
+      color: #047857;
+      margin: 0;
+      min-width: 200px;
     }
 
-    .escore-categoria {
-      font-size: 1rem;
-      font-weight: 600;
-      color: #4338ca;
-      margin-top: 0.5rem;
+    .categoria-escore {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
     }
 
-    .escore-detail {
-      font-size: 0.875rem;
-      color: #6366f1;
-      margin-left: 0.5rem;
+    .escore-total {
+      font-size: 24px;
+      font-weight: 800;
+      color: #059669;
     }
 
-    .check-badge {
-      background: #6366f1;
+    .escore-detalhe {
+      font-size: 11px;
+      color: #6b7280;
+    }
+
+    .itens-list {
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .item-card {
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .item-card.automatico { border-color: #a7f3d0; background: #f0fdf4; }
+    .item-card.manual { border-color: #fde68a; background: #fffbeb; }
+
+    .item-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 15px;
+      background: rgba(255,255,255,0.5);
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .item-numero {
+      background: #059669;
       color: white;
-      width: 36px;
-      height: 36px;
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.25rem;
+      font-size: 11px;
       font-weight: 700;
+      flex-shrink: 0;
     }
 
-    .itens-automaticos {
-      background: #f9fafb;
-      padding: 1.5rem;
-      border-radius: 8px;
-      margin-bottom: 1.5rem;
-      border-left: 4px solid #6366f1;
-    }
-
-    .itens-automaticos h4 {
-      font-size: 1rem;
+    .item-nome {
+      flex: 1;
+      font-size: 13px;
       font-weight: 600;
-      color: #374151;
-      margin-bottom: 1rem;
+      color: #1f2937;
     }
 
-    .itens-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-      gap: 1rem;
+    .item-tipo-badge {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 600;
     }
+
+    .item-tipo-badge.auto { background: #d1fae5; color: #047857; }
+    .item-tipo-badge.manual { background: #fef3c7; color: #92400e; }
 
     .item-automatico {
+      padding: 15px;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 0.5rem;
-      padding: 1rem;
+      gap: 15px;
+    }
+
+    .auto-valor {
       background: white;
-      border-radius: 6px;
-      border: 1px solid #e5e7eb;
+      padding: 10px 15px;
+      border-radius: 8px;
+      text-align: center;
+      border: 2px solid #10b981;
     }
 
-    .item-label {
-      font-size: 0.75rem;
-      font-weight: 600;
+    .valor-numero { display: block; font-size: 24px; font-weight: 800; color: #059669; }
+    .valor-label { display: block; font-size: 10px; color: #6b7280; }
+
+    .auto-descricao {
+      flex: 1;
+      font-size: 12px;
       color: #6b7280;
+      margin: 0;
+      line-height: 1.4;
     }
 
-    .item-pontos {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #4338ca;
+    .item-manual {
+      padding: 15px;
     }
 
-    .itens-manuais {
-      margin-bottom: 1.5rem;
-    }
-
-    .itens-manuais h4 {
-      font-size: 1rem;
-      font-weight: 600;
-      color: #374151;
-      margin-bottom: 1rem;
-    }
-
-    .manuais-grid {
+    .niveis-grid {
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 8px;
     }
 
-    .manual-item {
+    .nivel-option {
       display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .manual-label {
-      font-weight: 600;
-      color: #374151;
-      min-width: 80px;
-    }
-
-    .pontuacao-select {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-
-    .radio-pontuacao input {
-      display: none;
-    }
-
-    .radio-box {
-      display: inline-block;
-      padding: 0.5rem 1rem;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
       border: 2px solid #e5e7eb;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
       transition: all 0.2s;
-      font-weight: 600;
+      background: white;
+    }
+
+    .nivel-option:hover { border-color: #10b981; background: #f0fdf4; }
+    .nivel-option.selected { border-color: #10b981; background: #d1fae5; }
+
+    .nivel-option input { display: none; }
+
+    .nivel-numero {
+      background: #e5e7eb;
       color: #374151;
-      min-width: 40px;
-      text-align: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
     }
 
-    .radio-pontuacao:hover .radio-box {
-      border-color: #6366f1;
-      background: #eef2ff;
-    }
-
-    .radio-pontuacao input:checked + .radio-box {
-      border-color: #6366f1;
-      background: #6366f1;
+    .nivel-option.selected .nivel-numero {
+      background: #10b981;
       color: white;
     }
 
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .form-label {
-      font-weight: 600;
+    .nivel-texto {
+      font-size: 12px;
       color: #374151;
-      font-size: 0.95rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      line-height: 1.4;
     }
 
-    .char-count {
-      font-size: 0.75rem;
-      color: #9ca3af;
-      font-weight: 400;
-    }
-
-    .form-textarea {
-      padding: 0.75rem;
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      font-family: inherit;
-      resize: vertical;
-      min-height: 80px;
-    }
-
-    .form-textarea:focus {
-      outline: none;
-      border-color: #6366f1;
-    }
-
-    .field-error {
-      color: #dc2626;
-      font-size: 0.875rem;
-      font-weight: 500;
-    }
-
-    .action-panel {
-      position: sticky;
+    .action-footer {
+      position: fixed;
       bottom: 0;
+      left: 0;
+      right: 0;
       background: white;
-      padding: 1.5rem;
-      border-radius: 12px;
-      border: 2px solid #6366f1;
-      box-shadow: 0 -4px 6px rgba(0,0,0,0.1);
+      padding: 15px 5%;
+      border-top: 2px solid #d1fae5;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 1rem;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+      z-index: 1000;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .footer-info {
+      display: flex;
+      align-items: center;
+      gap: 20px;
       flex-wrap: wrap;
     }
 
     .escore-display {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1.5rem;
-      background: linear-gradient(135deg, #ddd6fe 0%, #c7d2fe 100%);
-      border-radius: 8px;
+      gap: 8px;
     }
 
-    .escore-label {
-      font-weight: 600;
-      color: #4338ca;
-      font-size: 1rem;
-    }
+    .escore-label { font-size: 14px; color: #6b7280; font-weight: 600; }
+    .escore-value { font-size: 24px; font-weight: 800; color: #059669; }
 
-    .escore-value {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #3730a3;
-    }
-
-    .btn {
-      padding: 0.75rem 1.5rem;
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      background: white;
+    .progresso-manual {
+      font-size: 12px;
       color: #6b7280;
-      white-space: nowrap;
-    }
-
-    .btn:hover:not(:disabled) {
-      background: #f9fafb;
-      transform: translateY(-1px);
-    }
-
-    .btn-back {
-      background: white;
-      color: #6366f1;
-      border-color: white;
+      background: #f3f4f6;
+      padding: 4px 10px;
+      border-radius: 4px;
     }
 
     .btn-finalize {
-      background: #6366f1;
+      background: #10b981;
       color: white;
-      border-color: #6366f1;
-      font-size: 1.1rem;
-      padding: 1rem 2rem;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
     }
 
-    .btn-finalize.enabled:hover {
-      background: #4f46e5;
-    }
+    .btn-finalize:hover:not(:disabled) { background: #059669; }
+    .btn-finalize.disabled { background: #d1d5db; cursor: not-allowed; }
 
-    .btn-finalize.disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      background: #9ca3af;
-      border-color: #9ca3af;
-    }
-
-    @media (max-width: 768px) {
-      .manual-item {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-
-      .action-panel {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .escore-display {
-        justify-content: center;
-      }
-    }
-
-    .read-only-badge {
-      background: #eef2ff;
-      color: #4338ca;
-      padding: 0.75rem 2.5rem;
-      border-radius: 8px;
-      font-weight: 800;
-      border: 2px solid #c7d2fe;
+    @media (max-width: 600px) {
+      .transicao-header { flex-direction: column; text-align: center; }
+      .categoria-header { flex-direction: column; text-align: center; }
+      .item-automatico { flex-direction: column; text-align: center; }
+      .action-footer { flex-direction: column; }
     }
   `;
 }

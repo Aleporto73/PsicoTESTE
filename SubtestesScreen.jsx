@@ -1,13 +1,23 @@
 import React, { useState, useMemo } from 'react';
+import { TASK_ANALYSIS_MAP_BY_LEVEL } from './taskAnalysisData';
 
-/* COMPONENTE: TELA 2 — Subtestes / Análise de Tarefas */
-export default function SubtestesScreen({ lacunas, sessionInfo, onFinalize, onBack, isReadOnly }) {
+/* 
+  COMPONENTE: TELA 2 — Validação Funcional (Subtestes / Task Analysis)
+  
+  🎯 REGRA PRINCIPAL: 
+  - Mostrar APENAS as tarefas dos marcos marcados como EMERGENTE ou NÃO OBSERVADO
+  - Se marco M05 está emergente → mostrar tarefas 5-a, 5-b, 5-c, 5-d, 5-e
+  - Se marco M02 está emergente → mostrar tarefas 2-a, 2-b, 2-c...
+  
+  VERSÃO 2.0 - Filtro por marco específico
+*/
+export default function SubtestesScreen({ data, sessionInfo, onFinalize, onBack, isReadOnly }) {
+  // ✅ ESTADO DE VALIDAÇÕES CLÍNICAS
   const [validacoes, setValidacoes] = useState(() => {
     if (sessionInfo?.lacunas_validadas) {
       const initial = {};
       sessionInfo.lacunas_validadas.forEach(l => {
-        initial[l.block_id] = {
-          tipo_subteste: l.tipo_subteste,
+        initial[l.sub_item_id || l.block_id] = {
           status_validacao: l.status_validacao,
           observacao: l.observacao
         };
@@ -17,95 +27,172 @@ export default function SubtestesScreen({ lacunas, sessionInfo, onFinalize, onBa
     return {};
   });
 
-  // Progresso de validação
+  // ✅ DETERMINAR NÍVEL ATIVO
+  const activeLevelTag = useMemo(() => {
+    const levelStr = String(sessionInfo?.active_level || sessionInfo?.level || '1');
+    return `${levelStr}-M`;
+  }, [sessionInfo]);
+
+  // ✅ FILTRAGEM INTELIGENTE: APENAS TAREFAS DOS MARCOS EMERGENTES/NÃO OBSERVADOS
+  const allTaskItems = useMemo(() => {
+    const allDomains = data?.domains || [];
+    const expandedResults = [];
+    const scoresSnapshot = sessionInfo?.scores_snapshot || {};
+
+    const levelNum = parseInt(sessionInfo?.active_level || sessionInfo?.level || '1');
+    const levelMap = TASK_ANALYSIS_MAP_BY_LEVEL[levelNum] || {};
+
+    console.log('📊 SubtestesScreen v2 - scores_snapshot:', scoresSnapshot);
+    console.log('📊 SubtestesScreen v2 - levelNum:', levelNum);
+
+    allDomains.forEach(domain => {
+      const domainKey = domain.domain_name.toUpperCase();
+      const allTasksForDomain = levelMap[domainKey] || [];
+
+      // Percorrer cada bloco do domínio
+      (domain.blocks || []).forEach(block => {
+        const blockId = block.block_id;
+        const status = scoresSnapshot[blockId];
+
+        // Verificar se pertence ao nível atual
+        const blockLevel = block.level;
+        const blockLevelNum = parseInt(blockLevel?.replace('-M', '') || '0');
+
+        if (blockLevelNum !== levelNum) {
+          return; // Pular blocos de outros níveis
+        }
+
+        // 🎯 FILTRO: Apenas EMERGENTE ou NÃO OBSERVADO
+        const isEmergente = status === 'emergente';
+        const isNaoObservado = !status || status === 'não_avaliado' || status === 'não_observado';
+
+        // Ignorar itens DOMINADOS
+        if (status === 'dominado') {
+          return;
+        }
+
+        if (isEmergente || isNaoObservado) {
+          // Extrair o número do milestone do block_id (ex: DOM01-L1-M05 → 5)
+          const milestoneMatch = blockId.match(/M(\d+)$/);
+          const milestoneNum = milestoneMatch ? parseInt(milestoneMatch[1]) : null;
+
+          console.log(`🔍 Marco ${blockId} - Status: ${status || 'sem status'} - Milestone: ${milestoneNum}`);
+
+          if (milestoneNum && allTasksForDomain.length > 0) {
+            // 🎯 FILTRAR apenas as tarefas que começam com o número do milestone
+            // Ex: milestone 5 → tarefas "5-a", "5-b", "5-c", etc.
+            const tasksForThisMilestone = allTasksForDomain.filter(task => {
+              const taskMilestone = parseInt(task.id.split('-')[0]);
+              return taskMilestone === milestoneNum;
+            });
+
+            console.log(`   → Encontradas ${tasksForThisMilestone.length} tarefas para M${milestoneNum}`);
+
+            if (tasksForThisMilestone.length > 0) {
+              tasksForThisMilestone.forEach(task => {
+                expandedResults.push({
+                  block_id: blockId,
+                  domain_name: domain.domain_name,
+                  level_label: block.level,
+                  milestone_text: block.texto_profissional || block.text || block.milestone,
+                  sub_item_id: `${blockId}-${task.id}`,
+                  sub_item_label: task.id,
+                  texto: task.texto || task.text,
+                  original_status: status || 'não_avaliado'
+                });
+              });
+            } else {
+              // Milestone sem tarefas específicas - criar item genérico
+              expandedResults.push({
+                block_id: blockId,
+                domain_name: domain.domain_name,
+                level_label: block.level,
+                milestone_text: block.texto_profissional || block.text || block.milestone,
+                sub_item_id: blockId,
+                sub_item_label: 'Validação',
+                texto: block.texto_profissional || block.text || "Validar este marco do repertório.",
+                original_status: status || 'não_avaliado'
+              });
+            }
+          } else if (allTasksForDomain.length === 0) {
+            // Domínio sem Task Analysis - criar item genérico
+            expandedResults.push({
+              block_id: blockId,
+              domain_name: domain.domain_name,
+              level_label: block.level,
+              milestone_text: block.texto_profissional || block.text || block.milestone,
+              sub_item_id: blockId,
+              sub_item_label: 'Validação',
+              texto: block.texto_profissional || block.text || "Este domínio não possui Task Analysis neste nível.",
+              original_status: status || 'não_avaliado'
+            });
+          }
+        }
+      });
+    });
+
+    console.log(`✅ SubtestesScreen v2 - Total de itens filtrados: ${expandedResults.length}`);
+    return expandedResults;
+  }, [data, sessionInfo]);
+
+  // ✅ CÁLCULO DE PROGRESSO
   const progress = useMemo(() => {
-    const total = lacunas.length;
-    const validadas = Object.values(validacoes).filter(v =>
-      v.tipo_subteste && v.status_validacao && v.observacao && v.observacao.trim().length >= 10
-    ).length;
+    const total = allTaskItems.length;
+    const validados = allTaskItems.filter(item => {
+      const v = validacoes[item.sub_item_id];
+      return v && v.status_validacao && v.observacao && v.observacao.trim().length >= 10;
+    }).length;
 
     return {
       total,
-      validadas,
-      pendentes: total - validadas,
-      percentComplete: total > 0 ? ((validadas / total) * 100).toFixed(1) : 0
+      validados,
+      percent: total > 0 ? ((validados / total) * 100).toFixed(0) : 0
     };
-  }, [validacoes, lacunas]);
+  }, [validacoes, allTaskItems]);
 
-  const canFinalize = progress.validadas === progress.total && progress.total > 0;
+  const canFinalize = progress.validados === progress.total && progress.total > 0;
 
-  const setValidacao = (blockId, field, value) => {
+  const setValidacao = (id, field, value) => {
     if (isReadOnly) return;
     setValidacoes(prev => ({
       ...prev,
-      [blockId]: {
-        ...prev[blockId],
-        [field]: value
-      }
+      [id]: { ...prev[id], [field]: value }
     }));
   };
 
   const handleFinalize = () => {
-    if (!canFinalize) {
-      alert(`Você precisa validar TODAS as ${lacunas.length} lacunas. Faltam ${progress.pendentes} lacunas.`);
+    if (progress.total === 0) {
+      const payload = {
+        session_id: sessionInfo.session_id,
+        active_level: activeLevelTag.replace('-M', ''),
+        validação_funcional: [],
+        finalizado_em: new Date().toISOString(),
+        schema_version: 'task_analysis_v2',
+        nota: 'Nenhum item emergente ou não observado para validar'
+      };
+      onFinalize(payload);
       return;
     }
 
-    // Gerar lacunas_validadas
-    const lacunasValidadas = lacunas.map(lacuna => {
-      const val = validacoes[lacuna.block_id];
-      return {
-        block_id: lacuna.block_id,
-        domain_name: lacuna.domain_name,
-        level: lacuna.level,
-        texto: lacuna.texto,
-        status_original: lacuna.status,
-        tipo_subteste: val.tipo_subteste,
-        status_validacao: val.status_validacao,
-        observacao: val.observacao.trim()
-      };
-    });
+    if (!canFinalize) {
+      alert(`Validação incompleta! Faltam ${progress.total - progress.validados} itens com observação mínima de 10 caracteres.`);
+      return;
+    }
 
-    const subtestesData = {
+    const payload = {
       session_id: sessionInfo.session_id,
-      child_name: sessionInfo.child_name,
-      date_milestones: sessionInfo.date,
-      date_subtestes: new Date().toISOString(),
-      tarefas_completas: true,
-      lacunas_validadas: lacunasValidadas,
-      schema_version: 'vbmapp_subtestes_v1'
+      active_level: activeLevelTag.replace('-M', ''),
+      validação_funcional: allTaskItems.map(item => ({
+        ...item,
+        validacao: validacoes[item.sub_item_id]
+      })),
+      finalizado_em: new Date().toISOString(),
+      schema_version: 'task_analysis_v2'
     };
 
-    onFinalize(subtestesData);
+    console.log('🚀 Finalizando SubtestesScreen com payload:', payload);
+    onFinalize(payload);
   };
-
-  const isLacunaCompleta = (blockId) => {
-    const val = validacoes[blockId];
-    return val && val.tipo_subteste && val.status_validacao && val.observacao && val.observacao.trim().length >= 10;
-  };
-
-  if (lacunas.length === 0) {
-    return (
-      <div className="subtestes-screen">
-        <style>{getSubtestesStyles()}</style>
-        <header className="subtestes-header">
-          <div className="header-content">
-            <h1>TELA 2 — Subtestes / Análise de Tarefas</h1>
-            <p>Nenhuma lacuna para validar</p>
-          </div>
-          {onBack && (
-            <button className="btn btn-back" onClick={onBack}>
-              ← Voltar
-            </button>
-          )}
-        </header>
-        <div className="empty-state">
-          <p>😊 Nenhuma lacuna foi identificada na avaliação de Milestones.</p>
-          <p>Todas as habilidades estão dominadas!</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="subtestes-screen">
@@ -114,167 +201,114 @@ export default function SubtestesScreen({ lacunas, sessionInfo, onFinalize, onBa
       {/* HEADER */}
       <header className="subtestes-header">
         <div className="header-content">
-          <h1>TELA 2 — Subtestes / Análise de Tarefas</h1>
-          <p>Validação Funcional das Lacunas</p>
-          <div className="session-info">
-            <strong>{sessionInfo.child_name}</strong> - Avaliado em {new Date(sessionInfo.date).toLocaleDateString('pt-BR')}
+          <h1>TELA 2 — Subtestes / Task Analysis</h1>
+          <p>Confirmação detalhada de repertório</p>
+          <div className="session-info-badge">
+            <strong>{sessionInfo.child_name}</strong> • Nível {activeLevelTag.replace('-M', '')}
           </div>
         </div>
-        {onBack && (
-          <button className="btn btn-back" onClick={onBack}>
-            ← Voltar
-          </button>
-        )}
+        <button className="btn-back-simple" onClick={onBack}>← Voltar</button>
       </header>
 
-      {/* PROGRESS SUMMARY */}
-      <section className="progress-summary">
-        <div className="progress-header">
-          <h2>Progresso de Validação</h2>
-          <div className="progress-indicator">
-            <span className="progress-text">
-              {progress.validadas} / {progress.total} lacunas validadas ({progress.percentComplete}%)
-            </span>
-            <div className="progress-bar-container">
-              <div
-                className="progress-bar-fill"
-                style={{ width: `${progress.percentComplete}%` }}
-              />
+      <div className="container">
+        {/* CONTADOR */}
+        <section className="progress-bar-area">
+          <div className="progress-info">
+            <span className="denominador">{progress.validados} / {progress.total} ITENS VALIDADOS</span>
+            <span className="percentual">{progress.percent}%</span>
+          </div>
+          <div className="progress-track">
+            <div className="progress-fill" style={{ width: `${progress.percent}%` }} />
+          </div>
+          {progress.total === 0 && (
+            <p className="empty-notice">
+              ✓ Nenhum item Emergente ou Não Observado encontrado. Todos os marcos estão dominados!
+            </p>
+          )}
+        </section>
+
+        {/* LISTA DE CARDS */}
+        <div className="blocks-list">
+          {allTaskItems.length === 0 ? (
+            <div className="empty-state">
+              <h3>🎉 Excelente!</h3>
+              <p>Não há itens pendentes para validação neste nível.</p>
+              <p>Todos os marcos foram marcados como <strong>Dominado</strong> na Tela 1.</p>
             </div>
-          </div>
-        </div>
+          ) : (
+            allTaskItems.map(item => {
+              const val = validacoes[item.sub_item_id] || {};
+              const isFilled = val.status_validacao && (val.observacao || '').trim().length >= 10;
+              const refStatus = item.original_status || 'não_avaliado';
 
-        {progress.pendentes > 0 && (
-          <div className="validation-alert">
-            ⚠️ Faltam {progress.pendentes} lacunas para validar
-          </div>
-        )}
-      </section>
-
-      {/* LACUNAS */}
-      <div className="lacunas-container">
-        {lacunas.map((lacuna, index) => {
-          const val = validacoes[lacuna.block_id] || {};
-          const isCompleta = isLacunaCompleta(lacuna.block_id);
-
-          return (
-            <article key={lacuna.block_id} className={`lacuna-card ${isCompleta ? 'completa' : 'pendente'}`}>
-              <div className="lacuna-header">
-                <div className="lacuna-number">#{index + 1}</div>
-                <div className="lacuna-info">
-                  <div className="lacuna-domain">
-                    <span className="domain-badge">{lacuna.domain_name}</span>
-                    <span className="level-badge">{lacuna.level}</span>
-                  </div>
-                  <div className="lacuna-status">
-                    Status original: <span className={`status-badge status-${lacuna.status}`}>
-                      {lacuna.status === 'emergente' ? 'Emergente' : 'Não Observado'}
+              return (
+                <article key={item.sub_item_id} className={`clinical-card ${isFilled ? 'filled' : ''}`}>
+                  <div className="card-header">
+                    <span className="block-identity">
+                      {item.domain_name.toUpperCase()} — {item.level_label} ({item.sub_item_label})
                     </span>
                   </div>
-                </div>
-                {isCompleta && <div className="check-badge">✓</div>}
-              </div>
 
-              <div className="lacuna-text">
-                <strong>Habilidade:</strong> {lacuna.texto}
-              </div>
-
-              <div className="validation-form">
-                {/* TIPO DE SUBTESTE */}
-                <div className="form-group">
-                  <label className="form-label">Tipo de Subteste *</label>
-                  <div className="radio-group">
-                    {[
-                      { value: 'ecoico', label: 'Ecoico', icon: '🗣️' },
-                      { value: 'motor', label: 'Motor', icon: '🤸' },
-                      { value: 'visual', label: 'Visual', icon: '👁️' },
-                      { value: 'verbal', label: 'Verbal', icon: '💬' },
-                      { value: 'funcional', label: 'Funcional', icon: '🎯' }
-                    ].map(tipo => (
-                      <label key={tipo.value} className="radio-label">
-                        <input
-                          type="radio"
-                          name={`tipo_${lacuna.block_id}`}
-                          value={tipo.value}
-                          checked={val.tipo_subteste === tipo.value}
-                          onChange={(e) => setValidacao(lacuna.block_id, 'tipo_subteste', e.target.value)}
-                          disabled={isReadOnly}
-                        />
-                        <span className="radio-text">{tipo.icon} {tipo.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* STATUS DE VALIDAÇÃO */}
-                <div className="form-group">
-                  <label className="form-label">Status de Validação *</label>
-                  <div className="radio-group">
-                    {[
-                      { value: 'confirmado', label: 'Confirmado', color: 'success' },
-                      { value: 'parcialmente_confirmado', label: 'Parcialmente Confirmado', color: 'warning' },
-                      { value: 'nao_confirmado', label: 'Não Confirmado', color: 'neutral' }
-                    ].map(status => (
-                      <label key={status.value} className="radio-label">
-                        <input
-                          type="radio"
-                          name={`status_${lacuna.block_id}`}
-                          value={status.value}
-                          checked={val.status_validacao === status.value}
-                          onChange={(e) => setValidacao(lacuna.block_id, 'status_validacao', e.target.value)}
-                          disabled={isReadOnly}
-                        />
-                        <span className={`radio-text status-${status.color}`}>
-                          {status.label}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                {/* OBSERVAÇÃO */}
-                <div className="form-group">
-                  <label className="form-label">
-                    Observação *
-                    <span className="char-count">
-                      {(val.observacao || '').length} caracteres (mínimo 10)
-                    </span>
-                  </label>
-                  <textarea
-                    className="form-textarea"
-                    placeholder="Descreva brevemente a evidência observada durante a validação funcional..."
-                    value={val.observacao || ''}
-                    onChange={(e) => setValidacao(lacuna.block_id, 'observacao', e.target.value)}
-                    rows={3}
-                    disabled={isReadOnly}
-                  />
-                  {val.observacao && val.observacao.trim().length > 0 && val.observacao.trim().length < 10 && (
-                    <div className="field-error">
-                      Observação deve ter no mínimo 10 caracteres
+                  <div className="card-body">
+                    <div className="milestone-ref">
+                      Ref. Milestone: <span className={`ref-badge ${refStatus.replace(' ', '_')}`}>
+                        {refStatus.replace('_', ' ').toUpperCase()}
+                      </span>
                     </div>
-                  )}
-                </div>
-              </div>
-            </article>
-          );
-        })}
+
+                    <p className="clinical-text">{item.texto}</p>
+
+                    <div className="validation-inputs">
+                      <label className="input-label">Validação Funcional *</label>
+                      <div className="radio-group-industrial">
+                        {[
+                          { v: 'confirmado', l: 'Confirmado', c: 'success' },
+                          { v: 'parcial', l: 'Parcial', c: 'warning' },
+                          { v: 'nao', l: 'Não Confir.', c: 'danger' }
+                        ].map(opt => (
+                          <button
+                            key={opt.v}
+                            className={`industrial-btn ${val.status_validacao === opt.v ? `active ${opt.c}` : ''}`}
+                            onClick={() => setValidacao(item.sub_item_id, 'status_validacao', opt.v)}
+                            disabled={isReadOnly}
+                          >
+                            {opt.l}
+                          </button>
+                        ))}
+                      </div>
+
+                      <label className="input-label">Evidência Clínica (Observação) *</label>
+                      <textarea
+                        className="industrial-textarea"
+                        placeholder="Descreva a evidência clínica observada..."
+                        value={val.observacao || ''}
+                        onChange={e => setValidacao(item.sub_item_id, 'observacao', e.target.value)}
+                        disabled={isReadOnly}
+                        rows={2}
+                      />
+                      <div className="char-count">{(val.observacao || '').length} / 10</div>
+                    </div>
+                  </div>
+                </article>
+              );
+            })
+          )}
+        </div>
       </div>
 
-      {/* ACTION PANEL */}
-      <section className="action-panel">
+      {/* FOOTER */}
+      <footer className="action-footer">
+        <button className="btn-outline-industrial" onClick={onBack}>← Milestones</button>
         {!isReadOnly && (
           <button
-            className={`btn btn-finalize ${canFinalize ? 'enabled' : 'disabled'}`}
+            className={`btn-finalize-industrial ${(canFinalize || progress.total === 0) ? 'pulse' : 'disabled'}`}
             onClick={handleFinalize}
-            disabled={!canFinalize}
+            disabled={!(canFinalize || progress.total === 0)}
           >
-            ✓ Finalizar Validação
+            {progress.total === 0 ? '→ Próxima Tela' : '✓ Finalizar Validação'}
           </button>
         )}
-        {isReadOnly && (
-          <div className="read-only-badge">🔒 MODO VISUALIZAÇÃO</div>
-        )}
-      </section>
+      </footer>
     </div>
   );
 }
@@ -282,402 +316,160 @@ export default function SubtestesScreen({ lacunas, sessionInfo, onFinalize, onBa
 function getSubtestesStyles() {
   return `
     .subtestes-screen {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 2rem 1rem;
+      background: #f8fafc;
+      min-height: 100vh;
+      padding-bottom: 120px;
+      font-family: 'Inter', system-ui, sans-serif;
     }
 
     .subtestes-header {
-      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+      background: #1e293b;
       color: white;
-      padding: 2rem;
-      border-radius: 12px;
-      margin-bottom: 2rem;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-
-    .subtestes-header h1 {
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-      font-weight: 700;
-    }
-
-    .subtestes-header p {
-      opacity: 0.95;
-      font-size: 1rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .session-info {
-      padding: 0.5rem 1rem;
-      background: rgba(255,255,255,0.15);
-      border-radius: 6px;
-      font-size: 0.9rem;
-      margin-top: 0.5rem;
-    }
-
-    .progress-summary {
-      background: white;
-      padding: 2rem;
-      border-radius: 12px;
-      margin-bottom: 2rem;
-      border: 1px solid #e5e7eb;
-    }
-
-    .progress-header h2 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-      color: #111827;
-    }
-
-    .progress-indicator {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .progress-text {
-      font-size: 1rem;
-      font-weight: 600;
-      color: #4b5563;
-    }
-
-    .progress-bar-container {
-      width: 100%;
-      height: 12px;
-      background: #e5e7eb;
-      border-radius: 6px;
-      overflow: hidden;
-    }
-
-    .progress-bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
-      transition: width 0.3s ease;
-      border-radius: 6px;
-    }
-
-    .validation-alert {
-      margin-top: 1rem;
-      padding: 1rem;
-      background: #fef3c7;
-      border-left: 4px solid #f59e0b;
-      border-radius: 4px;
-      color: #92400e;
-      font-weight: 600;
-    }
-
-    .lacunas-container {
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
-      margin-bottom: 2rem;
-    }
-
-    .lacuna-card {
-      background: white;
-      padding: 2rem;
-      border-radius: 12px;
-      border: 2px solid #e5e7eb;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-      transition: all 0.2s;
-    }
-
-    .lacuna-card.pendente {
-      border-color: #f59e0b;
-    }
-
-    .lacuna-card.completa {
-      border-color: #8b5cf6;
-      background: #faf5ff;
-    }
-
-    .lacuna-header {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1rem;
-      align-items: flex-start;
-    }
-
-    .lacuna-number {
-      background: #8b5cf6;
-      color: white;
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: 1.25rem;
-    }
-
-    .lacuna-info {
-      flex: 1;
-    }
-
-    .lacuna-domain {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
-      flex-wrap: wrap;
-    }
-
-    .domain-badge {
-      background: #ddd6fe;
-      color: #5b21b6;
-      padding: 0.25rem 0.75rem;
-      border-radius: 6px;
-      font-size: 0.875rem;
-      font-weight: 600;
-    }
-
-    .level-badge {
-      background: #e0e7ff;
-      color: #3730a3;
-      padding: 0.25rem 0.75rem;
-      border-radius: 6px;
-      font-size: 0.875rem;
-      font-weight: 600;
-    }
-
-    .lacuna-status {
-      font-size: 0.875rem;
-      color: #6b7280;
-    }
-
-    .status-badge {
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      font-weight: 600;
-      font-size: 0.75rem;
-    }
-
-    .status-emergente {
-      background: #fef3c7;
-      color: #92400e;
-    }
-
-    .status-nao_observado {
-      background: #f3f4f6;
-      color: #374151;
-    }
-
-    .check-badge {
-      background: #8b5cf6;
-      color: white;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.25rem;
-      font-weight: 700;
-    }
-
-    .lacuna-text {
-      background: #f9fafb;
-      padding: 1rem;
-      border-radius: 8px;
-      margin-bottom: 1.5rem;
-      line-height: 1.6;
-      color: #111827;
-    }
-
-    .validation-form {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .form-label {
-      font-weight: 600;
-      color: #374151;
-      font-size: 0.95rem;
+      padding: 30px 5%;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
 
-    .char-count {
-      font-size: 0.75rem;
-      color: #9ca3af;
-      font-weight: 400;
+    .header-content h1 { font-size: 24px; margin: 0; font-weight: 800; letter-spacing: -0.5px; }
+    .header-content p { opacity: 0.6; font-size: 14px; margin: 5px 0 0 0; }
+    .session-info-badge { background: rgba(255,255,255,0.1); padding: 4px 12px; border-radius: 6px; font-size: 12px; margin-top: 10px; display: inline-block; }
+    
+    .btn-back-simple { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+
+    .container { max-width: 1000px; margin: 0 auto; padding: 30px 20px; }
+
+    .progress-bar-area { background: white; padding: 20px; border-radius: 12px; border: 2px solid #e2e8f0; margin-bottom: 40px; }
+    .progress-info { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 700; font-size: 13px; color: #475569; }
+    .progress-track { background: #f1f5f9; height: 8px; border-radius: 4px; overflow: hidden; }
+    .progress-fill { background: #4f46e5; height: 100%; transition: width 0.4s ease; }
+    
+    .empty-notice { 
+      margin-top: 15px; 
+      padding: 10px; 
+      background: #dcfce7; 
+      border-radius: 8px; 
+      color: #166534; 
+      font-size: 13px; 
+      text-align: center;
     }
 
-    .radio-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-    }
-
-    .radio-label {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1rem;
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-      background: white;
-    }
-
-    .radio-label:hover {
-      background: #f9fafb;
-      border-color: #8b5cf6;
-    }
-
-    .radio-label input[type="radio"] {
-      cursor: pointer;
-    }
-
-    .radio-label input[type="radio"]:checked + .radio-text {
-      font-weight: 700;
-    }
-
-    .radio-label:has(input:checked) {
-      border-color: #8b5cf6;
-      background: #faf5ff;
-    }
-
-    .radio-text {
-      font-size: 0.9rem;
-      color: #374151;
-    }
-
-    .radio-text.status-success {
-      color: #065f46;
-    }
-
-    .radio-text.status-warning {
-      color: #92400e;
-    }
-
-    .radio-text.status-neutral {
-      color: #374151;
-    }
-
-    .form-textarea {
-      padding: 0.75rem;
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      font-family: inherit;
-      resize: vertical;
-      min-height: 80px;
-    }
-
-    .form-textarea:focus {
-      outline: none;
-      border-color: #8b5cf6;
-    }
-
-    .field-error {
-      color: #dc2626;
-      font-size: 0.875rem;
-      font-weight: 500;
-    }
-
-    .action-panel {
-      position: sticky;
-      bottom: 0;
-      background: white;
-      padding: 1.5rem;
-      border-radius: 12px;
-      border: 2px solid #8b5cf6;
-      box-shadow: 0 -4px 6px rgba(0,0,0,0.1);
-      display: flex;
-      justify-content: center;
-    }
-
-    .btn {
-      padding: 0.75rem 1.5rem;
-      border: 2px solid #e5e7eb;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      background: white;
-      color: #6b7280;
-      white-space: nowrap;
-    }
-
-    .btn:hover:not(:disabled) {
-      background: #f9fafb;
-      transform: translateY(-1px);
-    }
-
-    .btn-back {
-      background: white;
-      color: #8b5cf6;
-      border-color: white;
-    }
-
-    .btn-finalize {
-      background: #8b5cf6;
-      color: white;
-      border-color: #8b5cf6;
-      font-size: 1.1rem;
-      padding: 1rem 3rem;
-    }
-
-    .btn-finalize.enabled:hover {
-      background: #7c3aed;
-    }
-
-    .btn-finalize.disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      background: #9ca3af;
-      border-color: #9ca3af;
-    }
+    .blocks-list { display: flex; flex-direction: column; gap: 25px; }
 
     .empty-state {
-      background: white;
-      padding: 3rem;
-      border-radius: 12px;
       text-align: center;
-      border: 2px dashed #e5e7eb;
+      padding: 60px 20px;
+      background: white;
+      border-radius: 16px;
+      border: 2px dashed #e2e8f0;
+    }
+    .empty-state h3 { font-size: 28px; margin-bottom: 10px; }
+    .empty-state p { color: #64748b; font-size: 15px; margin: 5px 0; }
+
+    .clinical-card {
+      background: white;
+      border: 2px solid #e2e8f0;
+      border-radius: 14px;
+      overflow: hidden;
+      transition: border-color 0.2s;
     }
 
-    .empty-state p {
-      font-size: 1.1rem;
-      color: #6b7280;
-      margin: 0.5rem 0;
+    .clinical-card.filled { border-color: #10b981; }
+
+    .card-header { background: #f8fafc; padding: 12px 20px; border-bottom: 1px solid #e2e8f0; }
+    .block-identity { font-size: 13px; font-weight: 800; color: #1e293b; letter-spacing: 0.5px; }
+
+    .card-body { padding: 20px; }
+
+    .milestone-ref { font-size: 12px; color: #64748b; font-weight: 600; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+    .ref-badge { padding: 2px 8px; border-radius: 4px; font-size: 10px; text-transform: uppercase; font-weight: 700; }
+    .ref-badge.dominado { background: #dcfce7; color: #166534; }
+    .ref-badge.emergente { background: #fef3c7; color: #92400e; }
+    .ref-badge.não_avaliado, .ref-badge.não_observado { background: #f1f5f9; color: #64748b; }
+
+    .clinical-text { font-size: 15px; color: #334155; line-height: 1.6; margin-bottom: 25px; }
+
+    .validation-inputs { border-top: 1px dashed #e2e8f0; padding-top: 20px; }
+    .input-label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 12px; text-transform: uppercase; }
+
+    .radio-group-industrial { display: flex; gap: 10px; margin-bottom: 20px; }
+    .industrial-btn {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid #e2e8f0;
+      background: white;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+      cursor: pointer;
+      transition: all 0.2s;
     }
 
-      @media (max-width: 768px) {
-        .lacuna-header {
-          flex-direction: column;
-        }
+    .industrial-btn:hover:not(:disabled) { border-color: #94a3b8; }
+    .industrial-btn.active.success { background: #dcfce7; border-color: #10b981; color: #166534; }
+    .industrial-btn.active.warning { background: #fef3c7; border-color: #f59e0b; color: #92400e; }
+    .industrial-btn.active.danger { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
 
-        .radio-group {
-          flex-direction: column;
-        }
+    .industrial-textarea {
+      width: 100%;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 70px;
+      box-sizing: border-box;
+    }
 
-        .radio-label {
-          width: 100%;
-        }
-      }
+    .industrial-textarea:focus { outline: none; border-color: #4f46e5; }
 
-      .read-only-badge {
-        background: #faf5ff;
-        color: #7c3aed;
-        padding: 0.75rem 2rem;
-        border-radius: 8px;
-        font-weight: 800;
-        border: 2px solid #ddd6fe;
-      }
-    `;
+    .char-count { text-align: right; font-size: 11px; color: #94a3b8; margin-top: 4px; }
+
+    .action-footer {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: white; padding: 20px 5%;
+      border-top: 2px solid #e2e8f0;
+      display: flex; justify-content: space-between; align-items: center;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+      z-index: 1000;
+    }
+
+    .btn-outline-industrial { 
+      background: transparent; 
+      border: 2px solid #e2e8f0; 
+      padding: 12px 30px; 
+      border-radius: 10px; 
+      font-weight: 700; 
+      color: #475569; 
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-outline-industrial:hover { border-color: #94a3b8; }
+    
+    .btn-finalize-industrial { 
+      background: #4f46e5; 
+      color: white; 
+      border: none; 
+      padding: 12px 40px; 
+      border-radius: 10px; 
+      font-weight: 700; 
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .btn-finalize-industrial:hover:not(:disabled) { background: #4338ca; }
+    .btn-finalize-industrial.disabled { background: #cbd5e1; cursor: not-allowed; }
+
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.85; } 100% { opacity: 1; } }
+    .pulse { animation: pulse 2s infinite; }
+
+    @media (max-width: 600px) {
+      .radio-group-industrial { flex-direction: column; }
+      .subtestes-header { flex-direction: column; gap: 15px; text-align: center; }
+      .btn-back-simple { align-self: center; }
+    }
+  `;
 }
