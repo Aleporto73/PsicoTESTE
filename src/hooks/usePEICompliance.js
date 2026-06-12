@@ -151,9 +151,34 @@ export default function usePEICompliance(sessionInfo) {
       estrategiasAcessibilidade += `Estratégias para Barreiras Identificadas:\n`;
 
       criticalBarriers.slice(0, 3).forEach(barrierName => {
+        const normalizedName = barrierName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        
         // Tentar encontrar chave correspondente no BARRIER_STRATEGY_MAP
-        const strategies = Object.entries(BARRIER_STRATEGY_MAP)
-          .find(([, strats]) => Array.isArray(strats) && strats.length > 0)?.[1] || [];
+        let strategiesKey = Object.keys(BARRIER_STRATEGY_MAP).find(key => {
+          const normalizedKey = key.replace(/_/g, ' ');
+          return normalizedName.includes(normalizedKey) || normalizedKey.includes(normalizedName.split(' ')[0]);
+        });
+        
+        // Fallbacks inteligentes para as 24 barreiras do VB-MAPP
+        if (!strategiesKey) {
+          if (normalizedName.includes('negativo') || normalizedName.includes('agressiv') || normalizedName.includes('birra')) strategiesKey = 'agressividade';
+          else if (normalizedName.includes('instrucional') || normalizedName.includes('compliance')) strategiesKey = 'nao_compliance';
+          else if (normalizedName.includes('mando') || normalizedName.includes('ecoico') || normalizedName.includes('verbal')) strategiesKey = 'sem_verbal_expressivo';
+          else if (normalizedName.includes('tato') || normalizedName.includes('intraverbal')) strategiesKey = 'pobreza_vocabulario';
+          else if (normalizedName.includes('motor')) strategiesKey = 'atraso_motor_grosso';
+          else if (normalizedName.includes('social') || normalizedName.includes('brincar') || normalizedName.includes('olho')) strategiesKey = 'isolamento_social';
+          else if (normalizedName.includes('atencao') || normalizedName.includes('hiperativ') || normalizedName.includes('rastreamento')) strategiesKey = 'desatencao';
+          else if (normalizedName.includes('mudanca') || normalizedName.includes('rotina')) strategiesKey = 'resistencia_mudanca';
+          else if (normalizedName.includes('estimulacao') || normalizedName.includes('obsessivo') || normalizedName.includes('estereotip') || normalizedName.includes('sensorial')) strategiesKey = 'autoestimulacao_excessiva';
+          else if (normalizedName.includes('articulacao') || normalizedName.includes('fala') || normalizedName.includes('ouvinte')) strategiesKey = 'dificuldade_compreensao';
+          else if (normalizedName.includes('dependencia') || normalizedName.includes('dica')) strategiesKey = 'dificuldade_regulacao_emocional';
+        }
+
+        const strategies = BARRIER_STRATEGY_MAP[strategiesKey] || [
+          'Adaptar demandas ao nível atual do aluno',
+          'Implementar reforçamento diferencial para comportamentos adequados',
+          'Aumentar previsibilidade com apoios visuais'
+        ];
 
         if (strategies.length > 0) {
           estrategiasAcessibilidade += `\n• ${barrierName}:\n`;
