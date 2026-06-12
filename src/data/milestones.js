@@ -1,13 +1,14 @@
-// data.js - VB-MAPP Data (VERSÃO CORRIGIDA - 154 MARCOS)
+// data.js - VB-MAPP Data (VERSÃO CORRIGIDA - 155 MARCOS)
 // Gerado a partir do CSV oficial VBMAPP_milestones_catalog_v1.csv
 // NOTA: DOM08 (Ecoico) e DOM09 (Vocal) não estão presentes neste arquivo.
 // Eles são tratados via subtestes específicos ou aguardam inclusão da planilha original.
 // Data: 28/01/2026
+// Patch 9A (12/06/2026): adicionado DOM10-L3-M15 (LRFFC 15-M) conforme planilha VBMAPP-PEI.xlsx.
 
 const VBMAPP_DATA = {
     "instrument": "VB-MAPP",
     "version": "2.0",
-    "total_blocks": 154,
+    "total_blocks": 155,
     "total_domains": 14,
     "domains": [
         {
@@ -862,7 +863,7 @@ const VBMAPP_DATA = {
         {
             "domain_id": "DOM10",
             "domain_name": "Resposta De Ouvinte Por Função, Característica E Classe",
-            "total_blocks": 9,
+            "total_blocks": 10,
             "blocks": [
                 {
                     "block_id": "DOM10-L2-M06",
@@ -935,6 +936,14 @@ const VBMAPP_DATA = {
                     "status": "active",
                     "texto_profissional": "Seleciona os itens corretos de um livro ou no ambiente natural dadas 4 questões diferentes rotativas sobre um único tópico para 25 tópicos diferentes (ex. onde a vaca vive? O que a vaca come? quem ordenha a vaca?)(T)",
                     "texto_responsavel": "Seleciona os itens corretos de um livro ou no ambiente natural dadas 4 questões diferentes rotativas sobre um único tópico para 25 tópicos diferentes (ex. onde a vaca vive? O que a vaca come? quem ordenha a vaca?)(T)"
+                },
+                {
+                    "block_id": "DOM10-L3-M15",
+                    "level": "3-M",
+                    "order": 110,
+                    "status": "active",
+                    "texto_profissional": "Demonstra 1000 respostas diferentes de tarefas de ouvinte por FCC, testadas ou obtidas da lista acumulada de respostas conhecidas (T).",
+                    "texto_responsavel": "Demonstra 1000 respostas diferentes de tarefas de ouvinte por FCC, testadas ou obtidas da lista acumulada de respostas conhecidas (T)."
                 }
             ]
         },
