@@ -262,13 +262,13 @@ export function useTransicaoLogic(sessionInfo, milestonesData, barreirasData, is
         totalDominados++;
 
         // Verificar domínio específico pelo block_id
-        if (blockId.includes('DOM11') || blockId.toLowerCase().includes('rotina')) {
+        if (blockId.startsWith('DOM12')) {
           pontosRotina++;
         }
-        if (blockId.includes('DOM02') || blockId.toLowerCase().includes('social')) {
+        if (blockId.startsWith('DOM06')) {
           pontosSocial++;
         }
-        if (blockId.includes('DOM01') || blockId.toLowerCase().includes('brincar')) {
+        if (blockId.startsWith('DOM05')) {
           pontosBrincar++;
         }
       }
