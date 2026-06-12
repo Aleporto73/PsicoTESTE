@@ -16,10 +16,66 @@ export function SessionProvider({ children }) {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
-        const parsedSessions = JSON.parse(saved);
+        let parsedSessions = JSON.parse(saved);
+        
+        // Mapeamento e Migração Legacy de DOM IDs
+        parsedSessions = parsedSessions.map(session => {
+          if (session.schema_version !== "vbmapp-domain-align-v1") {
+            const migrateDOM = (id) => {
+              if (!id || typeof id !== 'string') return id;
+              if (id.includes('DOM14')) return id.replace('DOM14', 'DOM15');
+              if (id.includes('DOM13')) return id.replace('DOM13', 'DOM14');
+              if (id.includes('DOM12')) return id.replace('DOM12', 'DOM16');
+              if (id.includes('DOM11')) return id.replace('DOM11', 'DOM13');
+              if (id.includes('DOM10')) return id.replace('DOM10', 'DOM12');
+              if (id.includes('DOM09')) return id.replace('DOM09', 'DOM11');
+              if (id.includes('DOM08')) return id.replace('DOM08', 'DOM10');
+              return id;
+            };
+
+            const migratedSession = { ...session, schema_version: "vbmapp-domain-align-v1" };
+
+            if (migratedSession.scores_snapshot) {
+              const newScores = {};
+              for (const [key, value] of Object.entries(migratedSession.scores_snapshot)) {
+                newScores[migrateDOM(key)] = value;
+              }
+              migratedSession.scores_snapshot = newScores;
+            }
+
+            if (migratedSession.lacunas) {
+              migratedSession.lacunas = migratedSession.lacunas.map(lacuna => ({
+                ...lacuna,
+                domain_id: migrateDOM(lacuna.domain_id),
+                block_id: migrateDOM(lacuna.block_id)
+              }));
+            }
+
+            if (migratedSession.pei_metas) {
+              migratedSession.pei_metas = migratedSession.pei_metas.map(meta => ({
+                ...meta,
+                domain_id: migrateDOM(meta.domain_id),
+                block_id: migrateDOM(meta.block_id)
+              }));
+            }
+
+            if (migratedSession.transicao?.valores_automaticos) {
+              const newTrans = {};
+              for (const [key, val] of Object.entries(migratedSession.transicao.valores_automaticos)) {
+                newTrans[migrateDOM(key)] = val;
+              }
+              migratedSession.transicao.valores_automaticos = newTrans;
+            }
+
+            return migratedSession;
+          }
+          return session;
+        });
+
         setSessions(parsedSessions);
       } catch (e) {
-        localStorage.removeItem(STORAGE_KEY);
+        console.error("Erro ao carregar do localStorage:", e);
+        // localStorage.removeItem(STORAGE_KEY); // Comentado para evitar perda de dados acidental
       }
     }
   }, []);
@@ -61,7 +117,8 @@ export function SessionProvider({ children }) {
       pei_completo: false,
       pei_plan: null,
       sessao_fechada: false,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
+      schema_version: "vbmapp-domain-align-v1"
     };
 
     setSessions(prev => [newSession, ...prev]);

@@ -1,5 +1,7 @@
 // data.js - VB-MAPP Data (VERSÃO CORRIGIDA - 154 MARCOS)
 // Gerado a partir do CSV oficial VBMAPP_milestones_catalog_v1.csv
+// NOTA: DOM08 (Ecoico) e DOM09 (Vocal) não estão presentes neste arquivo.
+// Eles são tratados via subtestes específicos ou aguardam inclusão da planilha original.
 // Data: 28/01/2026
 
 const VBMAPP_DATA = {
@@ -858,12 +860,12 @@ const VBMAPP_DATA = {
             ]
         },
         {
-            "domain_id": "DOM08",
+            "domain_id": "DOM10",
             "domain_name": "Resposta De Ouvinte Por Função, Característica E Classe",
             "total_blocks": 9,
             "blocks": [
                 {
-                    "block_id": "DOM08-L2-M06",
+                    "block_id": "DOM10-L2-M06",
                     "level": "2-M",
                     "order": 101,
                     "status": "active",
@@ -871,7 +873,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Seleciona 5 comidas ou bebidas diferentes quando cada uma delas é apresentada um conjunto de 5 itens (com 4 não comidas ou 4 não bebidas) e perguntado para preencher verbalmente Você come... e Você bebe... (T)"
                 },
                 {
-                    "block_id": "DOM08-L2-M07",
+                    "block_id": "DOM10-L2-M07",
                     "level": "2-M",
                     "order": 102,
                     "status": "active",
@@ -879,7 +881,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Seleciona o item correto de um conjunto de 8, para completar 25 instruções diferentes de FCC de qualquer tipo (ex.: você senta na...). (T)"
                 },
                 {
-                    "block_id": "DOM08-L2-M08",
+                    "block_id": "DOM10-L2-M08",
                     "level": "2-M",
                     "order": 103,
                     "status": "active",
@@ -887,7 +889,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Seleciona o item correto de um conjunto de 10 (ou de um livro), para 25 perguntas diferentes formadas de verbo-substantivo de ROFCC usando qual, o que e quem (ex. O que você dirige? Qual late? Quem pode saltar?). (T)"
                 },
                 {
-                    "block_id": "DOM08-L2-M09",
+                    "block_id": "DOM10-L2-M09",
                     "level": "2-M",
                     "order": 104,
                     "status": "active",
@@ -895,7 +897,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Seleciona um item dadas 3 diferentes declarações verbais sobre cada item quando apresentado independentemente (ex. ache o animal. O que late? O que tem patas?) para 25 itens (T)"
                 },
                 {
-                    "block_id": "DOM08-L2-M10",
+                    "block_id": "DOM10-L2-M10",
                     "level": "2-M",
                     "order": 105,
                     "status": "active",
@@ -903,7 +905,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Tateia os itens espontaneamente em 50% das tentativas (ex.: diz cachorro dado a afirmação “Encontre um animal” e um arranjo visual contendo uma figura de um cachorro) (T/O)"
                 },
                 {
-                    "block_id": "DOM08-L3-M11",
+                    "block_id": "DOM10-L3-M11",
                     "level": "3-M",
                     "order": 106,
                     "status": "active",
@@ -911,7 +913,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Seleciona o item correto de uma matriz de 10 que contém 3 estímulos similares (ex. cores, formas ou classe semelhantes, mas estas são as alternativas erradas), para 25 diferentes questões com pronomes interrogativos de tarefas de ouvinte por FCC (T)"
                 },
                 {
-                    "block_id": "DOM08-L3-M12",
+                    "block_id": "DOM10-L3-M12",
                     "level": "3-M",
                     "order": 107,
                     "status": "active",
@@ -919,7 +921,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Seleciona um item de um livro baseado em 2 componentes verbais: ou uma característica (ex. cor), função (ex. desenha com), ou classe (ex. roupas) para 25 itens (ex. Você vê um animal marrom? Você pode encontrar alguma roupa com botões?) (T)"
                 },
                 {
-                    "block_id": "DOM08-L3-M13",
+                    "block_id": "DOM10-L3-M13",
                     "level": "3-M",
                     "order": 108,
                     "status": "active",
@@ -927,7 +929,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Seleciona itens de uma página de livro ou no ambiente natural com base em três componentes verbais (ex. verbo, adjetivo, preposição, pronome) para 25 questões de QU em tarefas de ouvinte por FCC (ex. qual fruta cresce em árvore?) (T)."
                 },
                 {
-                    "block_id": "DOM08-L3-M14",
+                    "block_id": "DOM10-L3-M14",
                     "level": "3-M",
                     "order": 109,
                     "status": "active",
@@ -937,12 +939,12 @@ const VBMAPP_DATA = {
             ]
         },
         {
-            "domain_id": "DOM09",
+            "domain_id": "DOM11",
             "domain_name": "Intraverbal",
             "total_blocks": 10,
             "blocks": [
                 {
-                    "block_id": "DOM09-L2-M06",
+                    "block_id": "DOM11-L2-M06",
                     "level": "2-M",
                     "order": 110,
                     "status": "active",
@@ -950,7 +952,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Completa 10 espaços em branco de frases diferentes de algum tipo (ex.: músicas, jogos sociais, animais, sons de objetos) (T)"
                 },
                 {
-                    "block_id": "DOM09-L2-M07",
+                    "block_id": "DOM11-L2-M07",
                     "level": "2-M",
                     "order": 111,
                     "status": "active",
@@ -958,7 +960,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Fornece o primeiro nome quando perguntado, “Qual seu nome?” (T)"
                 },
                 {
-                    "block_id": "DOM09-L2-M08",
+                    "block_id": "DOM11-L2-M08",
                     "level": "2-M",
                     "order": 112,
                     "status": "active",
@@ -966,7 +968,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Completa 25 espaços em branco diferentes em frases (não incluindo sons) (ex.: Você come... Você dorme em uma... Sapatos e...) (T)"
                 },
                 {
-                    "block_id": "DOM09-L2-M09",
+                    "block_id": "DOM11-L2-M09",
                     "level": "2-M",
                     "order": 113,
                     "status": "active",
@@ -974,7 +976,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Responde 25 questões “o que” diferentes (ex.: Quem são seus amigos? Onde está seu travesseiro?) (T)"
                 },
                 {
-                    "block_id": "DOM09-L2-M10",
+                    "block_id": "DOM11-L2-M10",
                     "level": "2-M",
                     "order": 114,
                     "status": "active",
@@ -982,7 +984,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Responde 25 diferentes questões “quem” e “onde” (ex.: Quem são seus amigos? Onde está o travesseiro?) (T)"
                 },
                 {
-                    "block_id": "DOM09-L3-M11",
+                    "block_id": "DOM11-L3-M11",
                     "level": "3-M",
                     "order": 115,
                     "status": "active",
@@ -990,7 +992,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Espontaneamente emite 20 intraverbais em forma de comentário (pode ser parte mando) (ex. o pai diz eu estou indo para o carro e a criança espontaneamente diz eu querodar uma volta!) (O)."
                 },
                 {
-                    "block_id": "DOM09-L3-M12",
+                    "block_id": "DOM11-L3-M12",
                     "level": "3-M",
                     "order": 116,
                     "status": "active",
@@ -998,7 +1000,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Demonstra 300 ou mais respostas intraverbais, testadas ou obtidas da lista acumulada de respostas intraverbais conhecidas (T)."
                 },
                 {
-                    "block_id": "DOM09-L3-M13",
+                    "block_id": "DOM11-L3-M13",
                     "level": "3-M",
                     "order": 117,
                     "status": "active",
@@ -1006,7 +1008,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Responde duas questões após ler trechos curtos em um livro (+15 palavras), para 25 trechos (ex. quem soprou até a casa cair?) (T)"
                 },
                 {
-                    "block_id": "DOM09-L3-M14",
+                    "block_id": "DOM11-L3-M14",
                     "level": "3-M",
                     "order": 118,
                     "status": "active",
@@ -1014,7 +1016,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Descreve 25 eventos, vídeos, histórias, etc. diferentes com 8 ou mais palavras (ex. conte-me o que acontece...o monstro grande assustou todo mundo e todos correram para dentro de casa) (T/O)."
                 },
                 {
-                    "block_id": "DOM09-L3-M15",
+                    "block_id": "DOM11-L3-M15",
                     "level": "3-M",
                     "order": 119,
                     "status": "active",
@@ -1024,12 +1026,12 @@ const VBMAPP_DATA = {
             ]
         },
         {
-            "domain_id": "DOM10",
+            "domain_id": "DOM12",
             "domain_name": "Rotinas De Classe E Habilidades De Grupo",
             "total_blocks": 10,
             "blocks": [
                 {
-                    "block_id": "DOM10-L2-M06",
+                    "block_id": "DOM12-L2-M06",
                     "level": "2-M",
                     "order": 120,
                     "status": "active",
@@ -1037,7 +1039,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Senta à mesa com o grupo sem apresentar comportamentos inadequados por 3 minutos (O)"
                 },
                 {
-                    "block_id": "DOM10-L2-M07",
+                    "block_id": "DOM12-L2-M07",
                     "level": "2-M",
                     "order": 121,
                     "status": "active",
@@ -1045,7 +1047,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Coloca itens pessoais distantes, organiza-os e vem para a mesa com dica verbal (O)"
                 },
                 {
-                    "block_id": "DOM10-L2-M08",
+                    "block_id": "DOM12-L2-M08",
                     "level": "2-M",
                     "order": 122,
                     "status": "active",
@@ -1053,7 +1055,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Transita entre as salas de atividades com uma dica gestual ou verbal, somente (O)"
                 },
                 {
-                    "block_id": "DOM10-L2-M09",
+                    "block_id": "DOM12-L2-M09",
                     "level": "2-M",
                     "order": 123,
                     "status": "active",
@@ -1061,7 +1063,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Senta em um pequeno grupo por 5 minutos sem comportamento inadequado ou tentar sair do grupo (O)"
                 },
                 {
-                    "block_id": "DOM10-L2-M10",
+                    "block_id": "DOM12-L2-M10",
                     "level": "2-M",
                     "order": 124,
                     "status": "active",
@@ -1069,7 +1071,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Senta em um pequeno grupo por 10 minutos, atenta ao professor ou material por 50% do período e responde a 5 SDs do professor (O)"
                 },
                 {
-                    "block_id": "DOM10-L3-M11",
+                    "block_id": "DOM12-L3-M11",
                     "level": "3-M",
                     "order": 125,
                     "status": "active",
@@ -1077,7 +1079,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Usa o banheiro e lava as mãos apenas com dicas verbais (T/O)"
                 },
                 {
-                    "block_id": "DOM10-L3-M12",
+                    "block_id": "DOM12-L3-M12",
                     "level": "3-M",
                     "order": 126,
                     "status": "active",
@@ -1085,7 +1087,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Responde a 5 grupos diferentes de instruções ou questões sem dicas diretas em um grupo de 3 ou mais crianças (ex. Todos de pé. Alguém está usando uma camisa vermelha?)"
                 },
                 {
-                    "block_id": "DOM10-L3-M13",
+                    "block_id": "DOM12-L3-M13",
                     "level": "3-M",
                     "order": 127,
                     "status": "active",
@@ -1093,7 +1095,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Trabalha independentemente por 5 minutos em um grupo e se mantém engajado na tarefa por 50% do período (O)"
                 },
                 {
-                    "block_id": "DOM10-L3-M14",
+                    "block_id": "DOM12-L3-M14",
                     "level": "3-M",
                     "order": 128,
                     "status": "active",
@@ -1101,7 +1103,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Adquire 2 novos comportamentos em um formato de ensino em grupo de 15 minutos envolvendo 5 ou mais crianças (T)"
                 },
                 {
-                    "block_id": "DOM10-L3-M15",
+                    "block_id": "DOM12-L3-M15",
                     "level": "3-M",
                     "order": 129,
                     "status": "active",
@@ -1111,12 +1113,12 @@ const VBMAPP_DATA = {
             ]
         },
         {
-            "domain_id": "DOM11",
+            "domain_id": "DOM13",
             "domain_name": "Estrutura Linguística",
             "total_blocks": 10,
             "blocks": [
                 {
-                    "block_id": "DOM11-L2-M06",
+                    "block_id": "DOM13-L2-M06",
                     "level": "2-M",
                     "order": 130,
                     "status": "active",
@@ -1124,7 +1126,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "A articulação da criança de 10 tatos pode ser entendida por adultos familiares que não pode ver o item tateado"
                 },
                 {
-                    "block_id": "DOM11-L2-M07",
+                    "block_id": "DOM13-L2-M07",
                     "level": "2-M",
                     "order": 131,
                     "status": "active",
@@ -1132,7 +1134,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Tem um vocabulário de ouvinte total de 100 palavras ( ex: pegue o nariz. Pule. Ache as chaves)"
                 },
                 {
-                    "block_id": "DOM11-L2-M08",
+                    "block_id": "DOM13-L2-M08",
                     "level": "2-M",
                     "order": 132,
                     "status": "active",
@@ -1140,7 +1142,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Emite 10 diferentes vocalizações de 2 palavras por dia de qualquer tipo exceto ecoico (ex: mando, tato)."
                 },
                 {
-                    "block_id": "DOM11-L2-M09",
+                    "block_id": "DOM13-L2-M09",
                     "level": "2-M",
                     "order": 133,
                     "status": "active",
@@ -1148,7 +1150,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Emite prosódia funcional (ex: ritmo, acentuação, entonação) 5 vezes em um dia (ex: põe ênfases ou acentua em certas palavras tal como “É  MEU!”)."
                 },
                 {
-                    "block_id": "DOM11-L2-M10",
+                    "block_id": "DOM13-L2-M10",
                     "level": "2-M",
                     "order": 134,
                     "status": "active",
@@ -1156,7 +1158,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Tem um vocabulário total de falante de 300 palavras (todos operantes verbais, exceto ecoico)."
                 },
                 {
-                    "block_id": "DOM11-L3-M11",
+                    "block_id": "DOM13-L3-M11",
                     "level": "3-M",
                     "order": 135,
                     "status": "active",
@@ -1164,7 +1166,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Emite flexões nominais combinando 10 substantivos originais com sufixos plurais (ex. cachorro vs. cachorros) e 10 substantivos originais com pronomes possessivos? (ex. a coleira do cachorro vs. a coleira do gato) (T/O)"
                 },
                 {
-                    "block_id": "DOM11-L3-M12",
+                    "block_id": "DOM13-L3-M12",
                     "level": "3-M",
                     "order": 136,
                     "status": "active",
@@ -1172,7 +1174,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Emite flexões verbais combinando 10 verbos originais para formar o pretérito (ex. joguei) e 10 verbos originais para formar o tempo verbal no futuro (e.g. jogará) (T/O)"
                 },
                 {
-                    "block_id": "DOM11-L3-M13",
+                    "block_id": "DOM13-L3-M13",
                     "level": "3-M",
                     "order": 137,
                     "status": "active",
@@ -1180,7 +1182,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Emite 10 diferentes frases nominais contendo pelo menos 3 palavras com 2 modificadores (ex. adjetivos, preposições, pronomes) (ex. Eu quero sorvete de chocolate.) (T/O)"
                 },
                 {
-                    "block_id": "DOM11-L3-M14",
+                    "block_id": "DOM13-L3-M14",
                     "level": "3-M",
                     "order": 138,
                     "status": "active",
@@ -1188,7 +1190,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Emite 10 diferentes frases verbais contendo pelo menos 3 palavras com 2 modificadores (ex. advérbios, preposições, pronomes) (ex. Me empurre com força. Suba os degraus.) (T/O)"
                 },
                 {
-                    "block_id": "DOM11-L3-M15",
+                    "block_id": "DOM13-L3-M15",
                     "level": "3-M",
                     "order": 139,
                     "status": "active",
@@ -1198,12 +1200,12 @@ const VBMAPP_DATA = {
             ]
         },
         {
-            "domain_id": "DOM12",
+            "domain_id": "DOM16",
             "domain_name": "Matemática",
             "total_blocks": 5,
             "blocks": [
                 {
-                    "block_id": "DOM12-L3-M11",
+                    "block_id": "DOM16-L3-M11",
                     "level": "3-M",
                     "order": 140,
                     "status": "active",
@@ -1211,7 +1213,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Identifica como ouvinte os números de 1-5 em um conjunto de 5 números diferentes (T)"
                 },
                 {
-                    "block_id": "DOM12-L3-M12",
+                    "block_id": "DOM16-L3-M12",
                     "level": "3-M",
                     "order": 141,
                     "status": "active",
@@ -1219,7 +1221,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Tateia os números de 1-5 (T)"
                 },
                 {
-                    "block_id": "DOM12-L3-M13",
+                    "block_id": "DOM16-L3-M13",
                     "level": "3-M",
                     "order": 142,
                     "status": "active",
@@ -1227,7 +1229,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Conta itens de 1-5 de um grande conjunto de itens com correspondência de 1 pra 1 (ex.: Me dê 4 carros. Agora me dê 2 carros.) (T)"
                 },
                 {
-                    "block_id": "DOM12-L3-M14",
+                    "block_id": "DOM16-L3-M14",
                     "level": "3-M",
                     "order": 143,
                     "status": "active",
@@ -1235,7 +1237,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Identifica como um ouvinte 8 comparações diferentes envolvendo medidas(ex.: Me mostre o mais ou o menos, o grande ou o pequeno, o muito ou o pouco, o cheio ou o vazio, o alto ou o baixo)(T)"
                 },
                 {
-                    "block_id": "DOM12-L3-M15",
+                    "block_id": "DOM16-L3-M15",
                     "level": "3-M",
                     "order": 144,
                     "status": "active",
@@ -1245,12 +1247,12 @@ const VBMAPP_DATA = {
             ]
         },
         {
-            "domain_id": "DOM13",
+            "domain_id": "DOM14",
             "domain_name": "Leitura",
             "total_blocks": 5,
             "blocks": [
                 {
-                    "block_id": "DOM13-L3-M11",
+                    "block_id": "DOM14-L3-M11",
                     "level": "3-M",
                     "order": 145,
                     "status": "active",
@@ -1258,7 +1260,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Atenta para um livro quando uma história está sendo lida para a criança em 75% das vezes (TO: 3min)"
                 },
                 {
-                    "block_id": "DOM13-L3-M12",
+                    "block_id": "DOM14-L3-M12",
                     "level": "3-M",
                     "order": 146,
                     "status": "active",
@@ -1266,7 +1268,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Seleciona (discriminação de ouvinte) as letras maiúsculas corretas de um conjunto de 5 letras, para 10 letras diferentes (T)"
                 },
                 {
-                    "block_id": "DOM13-L3-M13",
+                    "block_id": "DOM14-L3-M13",
                     "level": "3-M",
                     "order": 147,
                     "status": "active",
@@ -1274,7 +1276,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Tateia 10 letras maiúsculas sob comando (T)"
                 },
                 {
-                    "block_id": "DOM13-L3-M14",
+                    "block_id": "DOM14-L3-M14",
                     "level": "3-M",
                     "order": 148,
                     "status": "active",
@@ -1282,7 +1284,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Lê seu próprio nome (T)"
                 },
                 {
-                    "block_id": "DOM13-L3-M15",
+                    "block_id": "DOM14-L3-M15",
                     "level": "3-M",
                     "order": 149,
                     "status": "active",
@@ -1292,12 +1294,12 @@ const VBMAPP_DATA = {
             ]
         },
         {
-            "domain_id": "DOM14",
+            "domain_id": "DOM15",
             "domain_name": "Escrita",
             "total_blocks": 5,
             "blocks": [
                 {
-                    "block_id": "DOM14-L3-M11",
+                    "block_id": "DOM15-L3-M11",
                     "level": "3-M",
                     "order": 150,
                     "status": "active",
@@ -1305,7 +1307,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Imita 5 ações escritas diferentes modeladas por um adulto usando um instrumento de escrita e uma superfície para escrita (T)"
                 },
                 {
-                    "block_id": "DOM14-L3-M12",
+                    "block_id": "DOM15-L3-M12",
                     "level": "3-M",
                     "order": 151,
                     "status": "active",
@@ -1313,7 +1315,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Traça de forma independente 5 formas geométricas diferentes dentro de 1/4 de polegada das linhas (ex.: círculo, quadrado, triângulo, retângulo, estrela) (T)"
                 },
                 {
-                    "block_id": "DOM14-L3-M13",
+                    "block_id": "DOM15-L3-M13",
                     "level": "3-M",
                     "order": 152,
                     "status": "active",
@@ -1321,7 +1323,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Copia 10 letras ou números legíveis (T)"
                 },
                 {
-                    "block_id": "DOM14-L3-M14",
+                    "block_id": "DOM15-L3-M14",
                     "level": "3-M",
                     "order": 153,
                     "status": "active",
@@ -1329,7 +1331,7 @@ const VBMAPP_DATA = {
                     "texto_responsavel": "Soletrar e escrever de forma legível seu próprio nome sem fazer cópia (T)"
                 },
                 {
-                    "block_id": "DOM14-L3-M15",
+                    "block_id": "DOM15-L3-M15",
                     "level": "3-M",
                     "order": 154,
                     "status": "active",

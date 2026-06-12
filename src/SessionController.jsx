@@ -49,8 +49,9 @@ export default function SessionController({
 
     // Helper: Verifica se tem lacuna no domínio Ecoico (DOM08)
     function hasEcoicoLacuna(session) {
-        if (!session?.lacunas) return false;
-        return session.lacunas.some(l => l.domain_id === 'DOM08');
+        // Desativado: Ecoico (DOM08) não está mais no milestones.js.
+        // O subteste rodará por outra regra quando for incorporado corretamente.
+        return false;
     }
 
     // Debug desabilitado em produção
