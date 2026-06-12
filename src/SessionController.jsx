@@ -555,7 +555,9 @@ export default function SessionController({
                                 lacunas: selectedSession.lacunas,
                                 ecoico_results: selectedSession.ecoico_results,
                                 ecoico_summary: selectedSession.ecoico_summary,
-                                instruments: selectedSession.instruments
+                                instruments: selectedSession.instruments,
+                                barreiras: selectedSession.barreiras,
+                                transicao: selectedSession.transicao
                             }}
                             domains={data.domains || []}
                             includeGraphs={includeGraphs}

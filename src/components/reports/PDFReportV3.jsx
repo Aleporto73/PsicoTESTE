@@ -626,6 +626,95 @@ const PDFReportV3 = ({
                 </div>
             )}
 
+            {/* Avaliação de Barreiras */}
+            {session.barreiras && session.barreiras.length > 0 && (
+                <div style={{ marginBottom: '32px', pageBreakBefore: 'always' }}>
+                    <h2 style={{ fontSize: '20px', color: '#2d3748', marginBottom: '16px', fontWeight: 'bold' }}>
+                        Avaliação de Barreiras
+                    </h2>
+                    <div style={{ backgroundColor: '#fffaf0', padding: '16px', borderRadius: '8px', borderLeft: '4px solid #ed8936', marginBottom: '20px' }}>
+                        <p style={{ margin: 0, fontSize: '14px', color: '#744210' }}>
+                            <strong>Resumo Geral:</strong> {session.barreiras.filter(b => b.pontuacao >= 3).length} barreiras críticas identificadas (pontuação ≥ 3).
+                        </p>
+                    </div>
+                    {session.barreiras.filter(b => b.pontuacao >= 3).map((barreira, idx) => (
+                        <div key={idx} style={{ backgroundColor: '#fefefe', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '12px', pageBreakInside: 'avoid' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                <span style={{ fontWeight: 'bold', color: '#2d3748', fontSize: '15px' }}>
+                                    {barreira.nome || barreira.categoria || barreira.label || barreira.title || "Barreira não identificada"}
+                                </span>
+                                <span style={{ backgroundColor: '#fed7d7', color: '#9b2c2c', padding: '4px 10px', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold' }}>
+                                    Pontuação: {barreira.pontuacao}
+                                </span>
+                            </div>
+                            {barreira.observacao && (
+                                <p style={{ margin: '8px 0 0 0', fontSize: '13px', color: '#4a5568', fontStyle: 'italic' }}>
+                                    Obs: {barreira.observacao}
+                                </p>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Avaliação de Transição */}
+            {session.transicao && (
+                <div style={{ marginBottom: '32px', pageBreakBefore: 'always' }}>
+                    <h2 style={{ fontSize: '20px', color: '#2d3748', marginBottom: '16px', fontWeight: 'bold' }}>
+                        Avaliação de Transição
+                    </h2>
+                    <div style={{ backgroundColor: '#f0fdf4', padding: '20px', borderRadius: '12px', border: '2px solid #bbf7d0', marginBottom: '20px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h3 style={{ fontSize: '16px', color: '#065f46', margin: 0, fontWeight: 'bold' }}>Escore Total de Transição</h3>
+                            <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#047857' }}>
+                                {session.transicao.escores?.totalGeral || session.transicao.escoreTotal || session.transicao.total || 0}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    {session.transicao.escores?.categorias && (
+                        <div style={{ marginBottom: '16px' }}>
+                            <h3 style={{ fontSize: '16px', color: '#2d3748', marginBottom: '12px', fontWeight: 'bold' }}>Escores por Categoria</h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+                                {Object.values(session.transicao.escores.categorias).map((cat, idx) => (
+                                    <div key={idx} style={{ backgroundColor: '#fefefe', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <span style={{ fontWeight: 'bold', color: '#2d3748', fontSize: '14px' }}>
+                                            Categoria {cat.numero || (idx + 1)}
+                                        </span>
+                                        <span style={{ fontSize: '13px', color: '#4a5568' }}>{cat.nome || 'Categoria de Transição'}</span>
+                                        <span style={{ color: '#047857', fontSize: '16px', fontWeight: 'bold' }}>
+                                            Total: {cat.total}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    
+                    {session.transicao.valoresAutomaticos && Object.keys(session.transicao.valoresAutomaticos).filter(k => k.startsWith('T') && parseInt(k.substring(1)) <= 5).length > 0 && (
+                        <div style={{ backgroundColor: '#fefefe', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '12px', pageBreakInside: 'avoid' }}>
+                            <h3 style={{ fontSize: '15px', color: '#2d3748', marginBottom: '12px', fontWeight: 'bold' }}>Itens Automáticos (1-5)</h3>
+                            <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', color: '#4a5568', lineHeight: '1.6' }}>
+                                {Object.entries(session.transicao.valoresAutomaticos).filter(([k,v]) => k.startsWith('T') && parseInt(k.substring(1)) <= 5).map(([k, v]) => (
+                                    <li key={k}><strong>{k}</strong>: {v} pontos</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
+                    {session.transicao.avaliacoes && Object.keys(session.transicao.avaliacoes).filter(k => k.startsWith('T') && parseInt(k.substring(1)) >= 6).length > 0 && (
+                        <div style={{ backgroundColor: '#fefefe', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '12px', pageBreakInside: 'avoid' }}>
+                            <h3 style={{ fontSize: '15px', color: '#2d3748', marginBottom: '12px', fontWeight: 'bold' }}>Itens Manuais (6-18)</h3>
+                            <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', color: '#4a5568', lineHeight: '1.6' }}>
+                                {Object.entries(session.transicao.avaliacoes).filter(([k,v]) => k.startsWith('T') && parseInt(k.substring(1)) >= 6).map(([k, v]) => (
+                                    <li key={k}><strong>{k}</strong>: {v.pontuacao !== undefined ? v.pontuacao : v} pontos</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+            )}
+
             {/* Resultados MDF-BR / IDF-BR se existirem */}
             {session.instruments?.find(i => i.instrument_id === 'mdf_br')?.data?.result && (() => {
                 const r = session.instruments.find(i => i.instrument_id === 'mdf_br').data.result;
