@@ -1,5 +1,5 @@
 import React from 'react';
-import { TASK_ANALYSIS_MAP } from '../../data/taskAnalysis';
+import { TASK_ANALYSIS_MAP, DOMAIN_ID_TO_TASK_ANALYSIS_KEY } from '../../data/taskAnalysis';
 import { useMilestoneLogic } from '../../hooks/useMilestoneLogic';
 
 export default function MilestonesScreen({
@@ -321,7 +321,9 @@ export default function MilestonesScreen({
                       : block.texto_responsavel;
 
                     // ✅ LÓGICA: Só mostra botão de tarefas se NÃO for Dominado
-                    const hasTasks = !!TASK_ANALYSIS_MAP[block.block_id];
+                    const domId = block.block_id.substring(0, 5);
+                    const taskKey = DOMAIN_ID_TO_TASK_ANALYSIS_KEY[domId];
+                    const hasTasks = !!TASK_ANALYSIS_MAP[taskKey];
                     const showTasks = hasTasks && currentScore && currentScore !== 'dominado';
 
                     return (
@@ -397,7 +399,21 @@ export default function MilestonesScreen({
       </div>
 
       {/* ✅ GAVETA LATERAL INTEGRADA */}
-      {logic.activeTaskBlock && (
+      {logic.activeTaskBlock && (() => {
+        const domId = logic.activeTaskBlock.substring(0, 5);
+        const taskKey = DOMAIN_ID_TO_TASK_ANALYSIS_KEY[domId];
+        const milestoneNumMatch = logic.activeTaskBlock.match(/M(\d+)$/);
+        const milestoneNum = milestoneNumMatch ? parseInt(milestoneNumMatch[1]) : null;
+        
+        let drawerTasks = [];
+        if (taskKey && TASK_ANALYSIS_MAP[taskKey] && milestoneNum) {
+          drawerTasks = TASK_ANALYSIS_MAP[taskKey].filter(task => {
+            if (!task.id) return false;
+            return parseInt(task.id.split('-')[0]) === milestoneNum;
+          });
+        }
+
+        return (
         <div className="task-drawer-overlay" onClick={() => logic.setActiveTaskBlock(null)}>
           <div className="task-drawer" onClick={e => e.stopPropagation()}>
             <header className="drawer-header">
@@ -408,19 +424,23 @@ export default function MilestonesScreen({
               <button className="close-btn" onClick={() => logic.setActiveTaskBlock(null)}>×</button>
             </header>
             <div className="drawer-body">
-              {TASK_ANALYSIS_MAP[logic.activeTaskBlock]?.map((task, idx) => (
+              {drawerTasks.map((task, idx) => (
                 <div key={idx} className="task-row">
                   <span className="task-badge">{task.id}</span>
                   <p className="task-description">{task.text || task.texto}</p>
                 </div>
               ))}
+              {drawerTasks.length === 0 && (
+                <p style={{padding: '20px', color: '#64748b'}}>Não há análise de tarefas detalhada para este marco.</p>
+              )}
             </div>
             <footer className="drawer-footer">
               <button className="btn-close-drawer" onClick={() => logic.setActiveTaskBlock(null)}>Entendi</button>
             </footer>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* RODAPÉ/DEBUG */}
       <footer className="milestones-footer">

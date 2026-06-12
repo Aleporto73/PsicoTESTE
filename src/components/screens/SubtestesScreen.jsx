@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { TASK_ANALYSIS_MAP_BY_LEVEL } from '../../data/taskAnalysis';
+import { TASK_ANALYSIS_MAP_BY_LEVEL, DOMAIN_ID_TO_TASK_ANALYSIS_KEY } from '../../data/taskAnalysis';
 
 /* 
   COMPONENTE: TELA 2 — Validação Funcional (Subtestes / Task Analysis)
@@ -46,7 +46,7 @@ export default function SubtestesScreen({ data, sessionInfo, onFinalize, onBack,
     console.log('📊 SubtestesScreen v2 - levelNum:', levelNum);
 
     allDomains.forEach(domain => {
-      const domainKey = domain.domain_name.toUpperCase();
+      const domainKey = DOMAIN_ID_TO_TASK_ANALYSIS_KEY[domain.domain_id] || domain.domain_name.toUpperCase();
       const allTasksForDomain = levelMap[domainKey] || [];
 
       // Percorrer cada bloco do domínio
