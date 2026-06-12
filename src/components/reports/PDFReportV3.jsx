@@ -626,6 +626,73 @@ const PDFReportV3 = ({
                 </div>
             )}
 
+            {/* Resultados MDF-BR / IDF-BR se existirem */}
+            {session.instruments?.find(i => i.instrument_id === 'mdf_br')?.data?.result && (() => {
+                const r = session.instruments.find(i => i.instrument_id === 'mdf_br').data.result;
+                return (
+                    <div style={{ marginBottom: '32px', pageBreakBefore: 'always' }}>
+                        <h2 style={{ fontSize: '20px', color: '#2d3748', marginBottom: '16px', fontWeight: 'bold' }}>
+                            Resultado MDF-BR
+                        </h2>
+                        <div style={{ backgroundColor: '#f7fafc', padding: '20px', borderRadius: '12px', border: '2px solid #e2e8f0', marginBottom: '16px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                <h3 style={{ fontSize: '16px', color: '#2d3748', margin: 0, fontWeight: 'bold' }}>Índice de Funcionalidade Global (IFG)</h3>
+                                <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#667eea' }}>{Number(r.ifg_total).toFixed(1)}</span>
+                            </div>
+                            <p style={{ margin: 0, fontSize: '14px', color: '#4a5568' }}><strong>Status de Risco:</strong> {r.status_risco}</p>
+                            {r.red_flag_details && r.red_flag_details.length > 0 && (
+                                <div style={{ marginTop: '12px' }}>
+                                    <p style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 'bold', color: '#e53e3e' }}>Red Flags:</p>
+                                    <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', color: '#4a5568' }}>
+                                        {r.red_flag_details.map((rf, idx) => (
+                                            <li key={idx}><strong>{rf.domain}:</strong> {rf.note}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            })()}
+
+            {session.instruments?.find(i => i.instrument_id === 'idf_br')?.data?.result && (() => {
+                const r = session.instruments.find(i => i.instrument_id === 'idf_br').data.result;
+                return (
+                    <div style={{ marginBottom: '32px', pageBreakBefore: 'always' }}>
+                        <h2 style={{ fontSize: '20px', color: '#2d3748', marginBottom: '16px', fontWeight: 'bold' }}>
+                            Resultado IDF-BR
+                        </h2>
+                        <div style={{ backgroundColor: '#f7fafc', padding: '20px', borderRadius: '12px', border: '2px solid #e2e8f0', marginBottom: '16px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                <h3 style={{ fontSize: '16px', color: '#2d3748', margin: 0, fontWeight: 'bold' }}>Funcionalidade Geral</h3>
+                                <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#667eea' }}>{r.total_percentage}%</span>
+                            </div>
+                            <p style={{ margin: 0, fontSize: '14px', color: '#4a5568' }}><strong>Score Total:</strong> {r.total_score} / {r.total_valid}</p>
+                        </div>
+                        
+                        {r.intervention_plan && r.intervention_plan.length > 0 && (
+                            <div>
+                                <h3 style={{ fontSize: '18px', color: '#2d3748', marginBottom: '12px', fontWeight: 'bold' }}>
+                                    Plano de Intervenção ({r.intervention_plan.length} ações recomendadas)
+                                </h3>
+                                {r.intervention_plan.map((ip, idx) => (
+                                    <div key={idx} style={{ backgroundColor: '#fffaf0', padding: '16px', borderRadius: '12px', border: '1px solid #fbd38d', marginBottom: '12px', pageBreakInside: 'avoid' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                            <span style={{ fontWeight: 'bold', color: '#dd6b20', fontSize: '14px' }}>Domínio {ip.domain_code}</span>
+                                            <span style={{ fontSize: '12px', backgroundColor: '#feebc8', color: '#c05621', padding: '2px 8px', borderRadius: '12px', fontWeight: 'bold' }}>
+                                                {ip.priority === 'medium' ? 'Prioridade Média' : 'Prioridade Baixa'}
+                                            </span>
+                                        </div>
+                                        <p style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#2d3748', fontWeight: 'bold' }}>{ip.recommended_action}</p>
+                                        <p style={{ margin: 0, fontSize: '13px', color: '#718096' }}><strong>Alvo:</strong> {ip.target_area}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                );
+            })()}
+
             {/* Rodapé Ético */}
             <div style={{
                 borderTop: '2px solid #e2e8f0',

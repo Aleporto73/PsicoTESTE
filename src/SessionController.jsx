@@ -501,7 +501,10 @@ export default function SessionController({
         return (
             <PEIScreen
                 sessionInfo={selectedSession}
-                onFinalize={(payload) => updateSession({ ...payload, pei_completo: true, sessao_fechada: true })}
+                onFinalize={(payload) => {
+                    updateSession({ ...payload, pei_completo: true, sessao_fechada: true });
+                    setViewMode('report');
+                }}
                 onBack={backToList}
                 isReadOnly={isReadOnly}
             />
@@ -550,7 +553,8 @@ export default function SessionController({
                                 scores: selectedSession.scores_snapshot,
                                 lacunas: selectedSession.lacunas,
                                 ecoico_results: selectedSession.ecoico_results,
-                                ecoico_summary: selectedSession.ecoico_summary
+                                ecoico_summary: selectedSession.ecoico_summary,
+                                instruments: selectedSession.instruments
                             }}
                             domains={data.domains || []}
                             includeGraphs={includeGraphs}
@@ -576,6 +580,12 @@ export default function SessionController({
                                                 — {inst.instrument_id.toUpperCase()}: {inst.status === 'completed' ? 'Concluído' : 'Em andamento'}
                                                 {inst.instrument_id === 'mchat_rf' && inst.data?.scores && (
                                                     <span> (Score: {inst.data.scores.raw_score}/20 — {inst.data.scores.risk_level})</span>
+                                                )}
+                                                {inst.instrument_id === 'mdf_br' && inst.data?.result && (
+                                                    <span> (IFG: {inst.data.result.ifg_total} — {inst.data.result.status_risco}{inst.data.result.hard_red_flag || inst.data.result.soft_red_flag ? ' c/ Red Flag' : ''})</span>
+                                                )}
+                                                {inst.instrument_id === 'idf_br' && inst.data?.result && (
+                                                    <span> ({inst.data.result.total_percentage}% funcional — Score: {inst.data.result.total_score} — {inst.data.result.intervention_plan?.length || 0} intervenções)</span>
                                                 )}
                                             </p>
                                         ))}
