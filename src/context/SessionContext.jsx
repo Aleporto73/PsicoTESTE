@@ -19,8 +19,23 @@ export function SessionProvider({ children }) {
         let parsedSessions = JSON.parse(saved);
         
         // Mapeamento e Migração Legacy de DOM IDs
+        // A versão ESTRUTURAL da migração de domínios vive em domain_schema_version.
+        // Payloads filhos (Barreiras/Transição) têm versões próprias e não podem
+        // acionar nem invalidar esta migração (Patch 8).
+        const DOMAIN_ALIGN_VERSION = "vbmapp-domain-align-v1";
+        // Sessões já alinhadas, incluindo as afetadas pelo bug antigo em que
+        // payloads sobrescreviam schema_version na raiz:
+        const LEGACY_ALIGNED_MARKERS = [
+          DOMAIN_ALIGN_VERSION,
+          "task_analysis_v2",
+          "vbmapp_barreiras_v2",
+          "vbmapp_transicao_v2"
+        ];
         parsedSessions = parsedSessions.map(session => {
-          if (session.schema_version !== "vbmapp-domain-align-v1") {
+          const isDomainAligned =
+            session.domain_schema_version === DOMAIN_ALIGN_VERSION ||
+            LEGACY_ALIGNED_MARKERS.includes(session.schema_version);
+          if (!isDomainAligned) {
             const migrateDOM = (id) => {
               if (!id || typeof id !== 'string') return id;
               if (id.includes('DOM14')) return id.replace('DOM14', 'DOM15');
@@ -33,7 +48,11 @@ export function SessionProvider({ children }) {
               return id;
             };
 
-            const migratedSession = { ...session, schema_version: "vbmapp-domain-align-v1" };
+            const migratedSession = {
+              ...session,
+              schema_version: DOMAIN_ALIGN_VERSION,
+              domain_schema_version: DOMAIN_ALIGN_VERSION
+            };
 
             if (migratedSession.scores_snapshot) {
               const newScores = {};
@@ -68,6 +87,11 @@ export function SessionProvider({ children }) {
             }
 
             return migratedSession;
+          }
+          // Compatibilidade: sessão já alinhada (inclusive marcada apenas pelo
+          // schema_version legado) recebe o campo estrutural dedicado.
+          if (session.domain_schema_version !== DOMAIN_ALIGN_VERSION) {
+            return { ...session, domain_schema_version: DOMAIN_ALIGN_VERSION };
           }
           return session;
         });
@@ -118,7 +142,8 @@ export function SessionProvider({ children }) {
       pei_plan: null,
       sessao_fechada: false,
       lastUpdated: new Date().toISOString(),
-      schema_version: "vbmapp-domain-align-v1"
+      schema_version: "vbmapp-domain-align-v1",
+      domain_schema_version: "vbmapp-domain-align-v1"
     };
 
     setSessions(prev => [newSession, ...prev]);
@@ -182,11 +207,18 @@ export function SessionProvider({ children }) {
   }, []);
 
   const updateSession = useCallback((updatedData) => {
+    // Proteção (Patch 8): payloads filhos não podem sobrescrever as versões
+    // estruturais da sessão na raiz (schema_version / domain_schema_version).
+    const {
+      schema_version: _ignoredSchemaVersion,
+      domain_schema_version: _ignoredDomainVersion,
+      ...safePayload
+    } = updatedData || {};
     setSelectedSession(prev => {
       if (!prev) return prev;
       const updatedSession = {
         ...prev,
-        ...updatedData,
+        ...safePayload,
         lastUpdated: new Date().toISOString()
       };
 

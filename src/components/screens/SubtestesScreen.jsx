@@ -167,7 +167,7 @@ export default function SubtestesScreen({ data, sessionInfo, onFinalize, onBack,
         active_level: activeLevelTag.replace('-M', ''),
         validação_funcional: [],
         finalizado_em: new Date().toISOString(),
-        schema_version: 'task_analysis_v2',
+        tarefas_schema_version: 'task_analysis_v2',
         nota: 'Nenhum item emergente ou não observado para validar'
       };
       onFinalize(payload);
@@ -187,7 +187,7 @@ export default function SubtestesScreen({ data, sessionInfo, onFinalize, onBack,
         validacao: validacoes[item.sub_item_id]
       })),
       finalizado_em: new Date().toISOString(),
-      schema_version: 'task_analysis_v2'
+      tarefas_schema_version: 'task_analysis_v2'
     };
 
     console.log('🚀 Finalizando SubtestesScreen com payload:', payload);

@@ -397,7 +397,7 @@ export function useTransicaoLogic(sessionInfo, milestonesData, barreirasData, is
       itens_manuais: avaliacoes,
       escores_por_categoria: escores.categorias,
       escore_total_transicao: escores.totalGeral,
-      schema_version: 'vbmapp_transicao_v2'
+      transicao_schema_version: 'vbmapp_transicao_v2'
     };
 
     onFinalize(transicaoData);

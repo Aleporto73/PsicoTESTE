@@ -374,7 +374,7 @@ export function useBarreirasLogic(sessionInfo, isReadOnly) {
       barreiras: barreiras,
       escore_total_barreiras: progress.escoreTotal,
       escore_maximo: progress.escoreMaximo,
-      schema_version: 'vbmapp_barreiras_v2'
+      barreiras_schema_version: 'vbmapp_barreiras_v2'
     };
 
     onFinalize(barreirasData);
