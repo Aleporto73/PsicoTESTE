@@ -7,6 +7,26 @@ import ObjectivesStep from '../pei/ObjectivesStep';
 import ProgramsStep from '../pei/ProgramsStep';
 import ValidationStep from '../pei/ValidationStep';
 
+/**
+ * Merge de arrays por ID — evita duplicação ao regenerar objetivos/procedimentos.
+ * Itens novos com mesmo ID sobrescrevem os antigos; itens sem ID são sempre adicionados.
+ */
+function mergeUniqueById(oldArr = [], newArr = []) {
+  const map = new Map();
+  [...oldArr, ...newArr].forEach(item => {
+    if (item?.id) {
+      map.set(item.id, item);
+    } else {
+      // Itens sem ID recebem chave única para não duplicar
+      map.set(`_no_id_${Math.random()}`, item);
+    }
+  });
+  return Array.from(map.values());
+}
+
+// Campos do peiPlan que são arrays e devem usar merge por ID
+const ARRAY_FIELDS = ['objectives'];
+
 export default function PEIScreen({
   sessionInfo,
   onFinalize,
@@ -47,14 +67,24 @@ export default function PEIScreen({
   // ═══════════════════════════════════════════════════════════════
 
   /**
-   * Atualiza o plano PEI com dados parciais
+   * Atualiza o plano PEI com merge seguro.
+   * Arrays listados em ARRAY_FIELDS usam mergeUniqueById para evitar duplicação.
    */
   const handleUpdate = useCallback((updates) => {
-    setPeiPlan(prev => ({
-      ...prev,
-      ...updates,
-      updatedAt: new Date().toISOString()
-    }));
+    setPeiPlan(prev => {
+      const merged = { ...prev };
+
+      Object.entries(updates).forEach(([key, value]) => {
+        if (ARRAY_FIELDS.includes(key) && Array.isArray(value) && Array.isArray(prev[key])) {
+          merged[key] = mergeUniqueById(prev[key], value);
+        } else {
+          merged[key] = value;
+        }
+      });
+
+      merged.updatedAt = new Date().toISOString();
+      return merged;
+    });
   }, []);
 
   /**
@@ -234,27 +264,28 @@ export default function PEIScreen({
             onUpdate={handleUpdate}
             onActivate={handleActivatePlan}
             sessionInfo={sessionInfo}
+            onBack={handlePreviousStep}
           />
         )}
       </section>
 
       {/* WIZARD NAVIGATION FOOTER */}
-      <footer className="wizard-footer">
-        <div className="footer-info">
-          <span>Etapa {currentStep} de 4</span>
-          <span>•</span>
-          <span>PEI Customizado para {sessionInfo?.child_name || 'Criança'}</span>
-        </div>
-        <div className="footer-actions">
-          <button
-            className="btn-secundario"
-            onClick={handlePreviousStep}
-            disabled={currentStep === 1 || isReadOnly}
-          >
-            ← Anterior
-          </button>
+      {currentStep < 4 && (
+        <footer className="wizard-footer">
+          <div className="footer-info">
+            <span>Etapa {currentStep} de 4</span>
+            <span>•</span>
+            <span>PEI Customizado para {sessionInfo?.child_name || 'Criança'}</span>
+          </div>
+          <div className="footer-actions">
+            <button
+              className="btn-secundario"
+              onClick={handlePreviousStep}
+              disabled={currentStep === 1 || isReadOnly}
+            >
+              ← Anterior
+            </button>
 
-          {currentStep < 4 && (
             <button
               className="btn-primario"
               onClick={handleNextStep}
@@ -262,9 +293,9 @@ export default function PEIScreen({
             >
               Próximo →
             </button>
-          )}
-        </div>
-      </footer>
+          </div>
+        </footer>
+      )}
     </div>
   );
 }

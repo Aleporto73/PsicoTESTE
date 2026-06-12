@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   TEACHING_PROCEDURES,
   RESOURCE_CATEGORIES,
@@ -113,6 +113,14 @@ export default function ProgramsStep({
     debounceAutoSave({ orientations: newOrientations });
   };
 
+  // Refs para valores atuais (evita stale closure no unmount)
+  const selectedProceduresRef = useRef(selectedProcedures);
+  const orientationsRef = useRef(orientations);
+  const selectedResourcesRef = useRef(selectedResources);
+  useEffect(() => { selectedProceduresRef.current = selectedProcedures; }, [selectedProcedures]);
+  useEffect(() => { orientationsRef.current = orientations; }, [orientations]);
+  useEffect(() => { selectedResourcesRef.current = selectedResources; }, [selectedResources]);
+
   // Auto-save with debounce
   const [debounceTimer, setDebounceTimer] = useState(null);
   const debounceAutoSave = (updates) => {
@@ -122,28 +130,28 @@ export default function ProgramsStep({
 
     const timer = setTimeout(() => {
       onUpdate({
-        selected_procedures: selectedProcedures,
-        orientations: updates.orientations || orientations,
-        resources: selectedResources
+        selected_procedures: selectedProceduresRef.current,
+        orientations: updates.orientations || orientationsRef.current,
+        resources: selectedResourcesRef.current
       });
     }, 1000);
 
     setDebounceTimer(timer);
   };
 
-  // Save on unmount
+  // Sync ao desmontar — usa refs para valores atuais
   useEffect(() => {
     return () => {
       if (debounceTimer) {
         clearTimeout(debounceTimer);
       }
       onUpdate({
-        selected_procedures: selectedProcedures,
-        orientations,
-        resources: selectedResources
+        selected_procedures: selectedProceduresRef.current,
+        orientations: orientationsRef.current,
+        resources: selectedResourcesRef.current
       });
     };
-  }, [selectedProcedures, orientations, selectedResources, debounceTimer]);
+  }, [onUpdate]); // SEM debounceTimer no deps — evita re-criação
 
   // ═══════════════════════════════════════════════════════════════
   // RENDER

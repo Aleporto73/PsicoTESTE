@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { TIME_HORIZONS, METRIC_TYPES } from '../../data/peiSchema';
 import { DOMAIN_NAMES_PEI } from '../../data/constants';
 import usePEICompliance from '../../hooks/usePEICompliance';
@@ -25,6 +25,19 @@ export default function ObjectivesStep({ peiPlan, onUpdate, sessionInfo }) {
   const [objectives, setObjectives] = useState(
     peiPlan?.objectives || []
   );
+
+  // Ref para sempre ter o valor atual (evita stale closure no debounce)
+  const objectivesRef = useRef(objectives);
+  useEffect(() => { objectivesRef.current = objectives; }, [objectives]);
+
+  // Sync ao desmontar — garante que dados não se perdem ao navegar
+  useEffect(() => {
+    return () => {
+      if (onUpdate) {
+        onUpdate({ objectives: objectivesRef.current });
+      }
+    };
+  }, [onUpdate]);
 
   // Estado para rastrear qual objetivo está sendo editado
   const [editingId, setEditingId] = useState(null);
@@ -112,13 +125,13 @@ export default function ObjectivesStep({ peiPlan, onUpdate, sessionInfo }) {
       clearTimeout(debounceTimers.current[objectiveId]);
     }
 
-    // Definir novo timer com 500ms debounce
+    // Definir novo timer com 500ms debounce — usa ref para valor atual
     debounceTimers.current[objectiveId] = setTimeout(() => {
       if (onUpdate) {
-        onUpdate({ objectives });
+        onUpdate({ objectives: objectivesRef.current });
       }
     }, 500);
-  }, [objectives, onUpdate]);
+  }, [onUpdate]);
 
   /**
    * Deleta um objetivo

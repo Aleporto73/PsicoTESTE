@@ -5,6 +5,7 @@ export default function ValidationStep({
   peiPlan,
   onUpdate,
   onActivate,
+  onBack,
   sessionInfo
 }) {
   // ═══════════════════════════════════════════════════════════════
@@ -24,12 +25,11 @@ export default function ValidationStep({
   const handleSaveDraft = async () => {
     setIsSaving(true);
     try {
-      const updatedPlan = {
-        ...peiPlan,
+      // Envia apenas status e timestamp — não sobrescreve dados das outras etapas
+      onUpdate({
         status: PLAN_STATUS.draft,
         updatedAt: new Date().toISOString()
-      };
-      onUpdate(updatedPlan);
+      });
     } catch (error) {
       console.error('Erro ao salvar rascunho:', error);
     } finally {
@@ -331,6 +331,9 @@ export default function ValidationStep({
 
       {/* ACTION BUTTONS */}
       <footer className="step-footer">
+        <button className="btn-secundario" onClick={onBack}>
+          ← Anterior
+        </button>
         <button
           className="btn-draft"
           onClick={handleSaveDraft}

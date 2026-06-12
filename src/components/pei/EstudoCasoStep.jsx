@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { ESTUDO_CASO_FIELDS } from '../../data/peiSchema';
 import usePEICompliance from '../../hooks/usePEICompliance';
 
@@ -30,6 +30,19 @@ export default function EstudoCasoStep({ peiPlan, onUpdate, sessionInfo }) {
     }
   );
 
+  // Ref para sempre ter o valor atual do estado (evita stale closure)
+  const estudoCasoRef = useRef(estudoCaso);
+  useEffect(() => { estudoCasoRef.current = estudoCaso; }, [estudoCaso]);
+
+  // Sync ao desmontar — garante que dados não se perdem ao navegar
+  useEffect(() => {
+    return () => {
+      if (onUpdate) {
+        onUpdate({ studioCaso: estudoCasoRef.current });
+      }
+    };
+  }, [onUpdate]);
+
   // Ref para timer de debounce
   const debounceTimers = useRef({});
 
@@ -54,9 +67,9 @@ export default function EstudoCasoStep({ peiPlan, onUpdate, sessionInfo }) {
 
     setEstudoCaso(gerado);
 
-    // Atualizar imediatamente
+    // Atualizar imediatamente com chave correta (studioCaso = schema key)
     if (onUpdate) {
-      onUpdate({ estudoCaso: gerado });
+      onUpdate({ studioCaso: gerado });
     }
   }, [sessionInfo, peiCompliance, onUpdate]);
 
@@ -75,12 +88,12 @@ export default function EstudoCasoStep({ peiPlan, onUpdate, sessionInfo }) {
       clearTimeout(debounceTimers.current[fieldKey]);
     }
 
-    // Definir novo timer com 500ms debounce
+    // Definir novo timer com 500ms debounce — usa ref para valor atual
     debounceTimers.current[fieldKey] = setTimeout(() => {
       if (onUpdate) {
         onUpdate({
-          estudoCaso: {
-            ...estudoCaso,
+          studioCaso: {
+            ...estudoCasoRef.current,
             [fieldKey]: value
           }
         });

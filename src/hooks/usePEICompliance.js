@@ -103,7 +103,8 @@ export default function usePEICompliance(sessionInfo) {
     // Barreiras críticas (pontuação >= 3)
     const criticalBarriers = (barreiras || [])
       .filter(b => b.pontuacao >= 3)
-      .map(b => b.nome)
+      .map(b => b.nome || b.label || b.title || 'Barreira não identificada')
+      .filter(Boolean)
       .sort();
 
     // ─────────────────────────────────────────────────────────
@@ -125,8 +126,8 @@ export default function usePEICompliance(sessionInfo) {
     // ─────────────────────────────────────────────────────────
     // CAMPO: Contexto Escolar
     // ─────────────────────────────────────────────────────────
-    // Usuario deve preencher manualmente - retornar vazio
-    const contextoEscolar = '';
+    // Caso aluno não esteja na escola
+    const contextoEscolar = 'Não aplicável no momento. Aluno ainda não inserido em contexto escolar formal. Análise baseada em ambiente terapêutico e domiciliar.';
 
     // ─────────────────────────────────────────────────────────
     // CAMPO: Potencialidades
@@ -245,7 +246,8 @@ export default function usePEICompliance(sessionInfo) {
     // Barreiras críticas (pontuação >= 3)
     const criticalBarriers = (barreiras || [])
       .filter(b => b.pontuacao >= 3)
-      .map(b => b.nome)
+      .map(b => b.nome || b.label || b.title || 'Barreira não identificada')
+      .filter(Boolean)
       .sort();
 
     // ─────────────────────────────────────────────────────────
