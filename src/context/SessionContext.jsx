@@ -26,8 +26,10 @@ export function SessionProvider({ children }) {
 
   // Salvar sessões no localStorage
   useEffect(() => {
-    if (sessions.length > 0) {
+    try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+    } catch (error) {
+      console.error("Erro ao salvar sessões no localStorage:", error);
     }
   }, [sessions]);
 
