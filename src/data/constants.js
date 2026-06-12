@@ -187,7 +187,7 @@ export const BARRIERS_NAMES = [
 // Valores padrão usados na aplicação
 // ═══════════════════════════════════════════════════════════════
 export const DEFAULTS = {
-  TOTAL_MILESTONES: 155,
+  TOTAL_MILESTONES: 160,
   MAX_BARRIER_SCORE: 4,
   MAX_TOTAL_BARRIERS: 96,
   PEI_VALIDITY_MONTHS: 6,

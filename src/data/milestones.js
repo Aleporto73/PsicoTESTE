@@ -1,15 +1,17 @@
-// data.js - VB-MAPP Data (VERSÃO CORRIGIDA - 155 MARCOS)
+// data.js - VB-MAPP Data (VERSÃO CORRIGIDA - 160 MARCOS)
 // Gerado a partir do CSV oficial VBMAPP_milestones_catalog_v1.csv
-// NOTA: DOM08 (Ecoico) e DOM09 (Vocal) não estão presentes neste arquivo.
-// Eles são tratados via subtestes específicos ou aguardam inclusão da planilha original.
+// NOTA: DOM08 (Ecoico) não está presente neste arquivo.
+// Ele é tratado via subteste específico (ver ecoico.js), como na planilha original.
 // Data: 28/01/2026
 // Patch 9A (12/06/2026): adicionado DOM10-L3-M15 (LRFFC 15-M) conforme planilha VBMAPP-PEI.xlsx.
+// Patch 9B (12/06/2026): adicionado DOM09 Comportamento Vocal Espontâneo (5 marcos N1) conforme
+// planilha VBMAPP-PEI.xlsx. Sem task analysis na planilha — app usa fallback de validação genérica.
 
 const VBMAPP_DATA = {
     "instrument": "VB-MAPP",
     "version": "2.0",
-    "total_blocks": 155,
-    "total_domains": 14,
+    "total_blocks": 160,
+    "total_domains": 15,
     "domains": [
         {
             "domain_id": "DOM01",
@@ -857,6 +859,53 @@ const VBMAPP_DATA = {
                     "status": "active",
                     "texto_profissional": "Imita (ou tenta imitar de forma aproximada) qualquer ação motora nova modelada por um adulto com e sem objetos (ou seja, “um repertório de imitação generalizada”). (T)",
                     "texto_responsavel": "Imita (ou tenta imitar de forma aproximada) qualquer ação motora nova modelada por um adulto com e sem objetos (ou seja, “um repertório de imitação generalizada”). (T)"
+                }
+            ]
+        },
+        {
+            "domain_id": "DOM09",
+            "domain_name": "Comportamento Vocal Espontâneo",
+            "total_blocks": 5,
+            "blocks": [
+                {
+                    "block_id": "DOM09-L1-M01",
+                    "level": "1-M",
+                    "order": 155,
+                    "status": "active",
+                    "texto_profissional": "Emite espontaneamente uma média de 5 sons por hora",
+                    "texto_responsavel": "Emite espontaneamente uma média de 5 sons por hora"
+                },
+                {
+                    "block_id": "DOM09-L1-M02",
+                    "level": "1-M",
+                    "order": 156,
+                    "status": "active",
+                    "texto_profissional": "Emite espontaneamente 5 sons diferentes, uma média de 10 sons no total por hora",
+                    "texto_responsavel": "Emite espontaneamente 5 sons diferentes, uma média de 10 sons no total por hora"
+                },
+                {
+                    "block_id": "DOM09-L1-M03",
+                    "level": "1-M",
+                    "order": 157,
+                    "status": "active",
+                    "texto_profissional": "Emite espontaneamente 10 sons diferentes com entonações variadas, média de 25 sons no total por hora",
+                    "texto_responsavel": "Emite espontaneamente 10 sons diferentes com entonações variadas, média de 25 sons no total por hora"
+                },
+                {
+                    "block_id": "DOM09-L1-M04",
+                    "level": "1-M",
+                    "order": 158,
+                    "status": "active",
+                    "texto_profissional": "Emite espontaneamente 5 aproximações diferentes de palavras inteiras",
+                    "texto_responsavel": "Emite espontaneamente 5 aproximações diferentes de palavras inteiras"
+                },
+                {
+                    "block_id": "DOM09-L1-M05",
+                    "level": "1-M",
+                    "order": 159,
+                    "status": "active",
+                    "texto_profissional": "Vocaliza espontaneamente 15 palavras inteiras ou frases com entonação e ritmo apropriados",
+                    "texto_responsavel": "Vocaliza espontaneamente 15 palavras inteiras ou frases com entonação e ritmo apropriados"
                 }
             ]
         },
