@@ -103,7 +103,7 @@ export default function usePEICompliance(sessionInfo) {
     // Barreiras críticas (pontuação >= 3)
     const criticalBarriers = (barreiras || [])
       .filter(b => b.pontuacao >= 3)
-      .map(b => b.nome || b.label || b.title || 'Barreira não identificada')
+      .map(b => b.nome || b.categoria || b.label || b.title || 'Barreira não identificada')
       .filter(Boolean)
       .sort();
 
@@ -271,7 +271,7 @@ export default function usePEICompliance(sessionInfo) {
     // Barreiras críticas (pontuação >= 3)
     const criticalBarriers = (barreiras || [])
       .filter(b => b.pontuacao >= 3)
-      .map(b => b.nome || b.label || b.title || 'Barreira não identificada')
+      .map(b => b.nome || b.categoria || b.label || b.title || 'Barreira não identificada')
       .filter(Boolean)
       .sort();
 

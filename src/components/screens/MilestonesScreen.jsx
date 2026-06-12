@@ -1,5 +1,5 @@
 import React from 'react';
-import { TASK_ANALYSIS_MAP, DOMAIN_ID_TO_TASK_ANALYSIS_KEY } from '../../data/taskAnalysis';
+import { TASK_ANALYSIS_MAP_BY_LEVEL, DOMAIN_ID_TO_TASK_ANALYSIS_KEY } from '../../data/taskAnalysis';
 import { useMilestoneLogic } from '../../hooks/useMilestoneLogic';
 
 export default function MilestonesScreen({
@@ -323,7 +323,10 @@ export default function MilestonesScreen({
                     // ✅ LÓGICA: Só mostra botão de tarefas se NÃO for Dominado
                     const domId = block.block_id.substring(0, 5);
                     const taskKey = DOMAIN_ID_TO_TASK_ANALYSIS_KEY[domId];
-                    const hasTasks = !!TASK_ANALYSIS_MAP[taskKey];
+                    const levelMatch = block.block_id.match(/-L(\d+)-/);
+                    const level = levelMatch ? parseInt(levelMatch[1]) : 1;
+                    const taskMapForLevel = TASK_ANALYSIS_MAP_BY_LEVEL[level] || {};
+                    const hasTasks = !!taskMapForLevel[taskKey];
                     const showTasks = hasTasks && currentScore && currentScore !== 'dominado';
 
                     return (
@@ -405,9 +408,13 @@ export default function MilestonesScreen({
         const milestoneNumMatch = logic.activeTaskBlock.match(/M(\d+)$/);
         const milestoneNum = milestoneNumMatch ? parseInt(milestoneNumMatch[1]) : null;
         
+        const levelMatch = logic.activeTaskBlock.match(/-L(\d+)-/);
+        const level = levelMatch ? parseInt(levelMatch[1]) : 1;
+        const taskMapForLevel = TASK_ANALYSIS_MAP_BY_LEVEL[level] || {};
+
         let drawerTasks = [];
-        if (taskKey && TASK_ANALYSIS_MAP[taskKey] && milestoneNum) {
-          drawerTasks = TASK_ANALYSIS_MAP[taskKey].filter(task => {
+        if (taskKey && taskMapForLevel[taskKey] && milestoneNum) {
+          drawerTasks = taskMapForLevel[taskKey].filter(task => {
             if (!task.id) return false;
             return parseInt(task.id.split('-')[0]) === milestoneNum;
           });
