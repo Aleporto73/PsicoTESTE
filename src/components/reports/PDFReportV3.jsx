@@ -715,6 +715,66 @@ const PDFReportV3 = ({
                 </div>
             )}
 
+            {/* Subteste Ecoico (condicional — só renderiza se houver resumo) */}
+            {session.ecoico_summary && (() => {
+                const eco = session.ecoico_summary;
+                const interpretText = eco.text || 'Resumo interpretativo não disponível.';
+                const totalPoints = eco.total_points ?? '—';
+                const milestone = eco.milestone || '—';
+                const recommendation = eco.recommendation || '';
+
+                return (
+                    <div style={{ marginBottom: '32px', pageBreakBefore: 'always' }}>
+                        <h2 style={{ fontSize: '20px', color: '#2d3748', marginBottom: '16px', fontWeight: 'bold' }}>
+                            Subteste Ecoico
+                        </h2>
+
+                        {/* Resumo interpretativo */}
+                        <div style={{ backgroundColor: '#f7fafc', padding: '20px', borderRadius: '12px', border: '2px solid #e2e8f0', marginBottom: '16px' }}>
+                            <p style={{ margin: 0, fontSize: '15px', color: '#2d3748', lineHeight: '1.6' }}>
+                                {interpretText}
+                            </p>
+                        </div>
+
+                        {/* Cards: pontuação total e marco estimado */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '16px' }}>
+                            <div style={{ backgroundColor: '#f7fafc', padding: '20px', borderRadius: '12px', textAlign: 'center', border: '2px solid #e2e8f0' }}>
+                                <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#667eea', marginBottom: '8px' }}>
+                                    {totalPoints}
+                                </div>
+                                <div style={{ fontSize: '14px', color: '#718096' }}>
+                                    Pontuação Total
+                                </div>
+                            </div>
+                            <div style={{ backgroundColor: '#f7fafc', padding: '20px', borderRadius: '12px', textAlign: 'center', border: '2px solid #e2e8f0' }}>
+                                <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#48bb78', marginBottom: '8px' }}>
+                                    {milestone}
+                                </div>
+                                <div style={{ fontSize: '14px', color: '#718096' }}>
+                                    Marco Estimado
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Recomendação (só se existir) */}
+                        {recommendation && (
+                            <div style={{ backgroundColor: '#fffaf0', padding: '16px', borderRadius: '8px', borderLeft: '4px solid #ed8936', marginBottom: '16px' }}>
+                                <p style={{ margin: 0, fontSize: '14px', color: '#744210', lineHeight: '1.6' }}>
+                                    <strong>Recomendação:</strong> {recommendation}
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Nota orientativa */}
+                        <div style={{ backgroundColor: '#f7fafc', padding: '12px 16px', borderRadius: '8px', borderLeft: '4px solid #667eea' }}>
+                            <p style={{ margin: 0, fontSize: '13px', color: '#4a5568', lineHeight: '1.6' }}>
+                                <strong>Sobre o subteste:</strong> O Ecoico é avaliado como subteste complementar de repetição verbal funcional, com caráter orientativo e sem compor o percentual geral de marcos.
+                            </p>
+                        </div>
+                    </div>
+                );
+            })()}
+
             {/* Resultados MDF-BR / IDF-BR se existirem */}
             {session.instruments?.find(i => i.instrument_id === 'mdf_br')?.data?.result && (() => {
                 const r = session.instruments.find(i => i.instrument_id === 'mdf_br').data.result;
