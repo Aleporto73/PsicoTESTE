@@ -34,6 +34,7 @@ Correções aplicadas:
 6. Pontuação ponderada de marcos: `dominado = 1`, `emergente = 0.5`, `nao_observado = 0`, `NA/desconhecido = excluído do denominador`.
 7. Emergente continua gerando lacuna e pode alimentar PEI como alvo de intervenção.
 8. Não replicar o valor `5` da planilha Excel; o `5` representava limitação de formatação, não regra clínica.
+9. Barreiras relevantes no PEI/conformidade passam a usar pontuação `>= 2` (inclui barreiras 2, 3 e 4, conforme planilha); barreiras de pontuação 2 não são chamadas de críticas e o texto passou para "Barreiras Relevantes Identificadas". Metas principais do PEI não foram alteradas.
 
 ## Commits relevantes
 
@@ -41,6 +42,7 @@ Correções aplicadas:
 - `61f6765` — `fix: adiciona marco DOM10-L3-M15 conforme planilha`
 - `28d70f8` — `feat: adiciona DOM09 Vocal conforme planilha`
 - `95da011` — `fix: pontua emergente como meio ponto`
+- `7d620a2` — `fix: considera barreiras relevantes no PEI`
 
 ## Tags relevantes
 
@@ -77,11 +79,7 @@ Motivo: a aba `AV TAREFAS` não contém seção de tarefas para Vocal. O app usa
 2. Transição:
    - ainda há divergência entre a soma bruta da planilha e a normalização/inversão do app.
 
-3. Barreiras no PEI:
-   - planilha puxa barreiras 2–4;
-   - app ainda usa `>= 3` na camada de conformidade.
-
-4. Ecoico:
+3. Ecoico:
    - planilha possui 100 estímulos fixos;
    - app ainda não implementa todos e o gatilho está desativado.
 
