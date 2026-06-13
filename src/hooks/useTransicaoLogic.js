@@ -290,24 +290,24 @@ export function useTransicaoLogic(sessionInfo, milestonesData, barreirasData, is
       }
     });
 
-    // Converter para escala de 0-5 para os itens automáticos
-    // Item 1: Milestones (percentual convertido para 1-5)
-    const percentDominados = totalMilestones > 0 ? (totalDominados / totalMilestones) * 100 : 0;
-    const item1Score = Math.min(5, Math.max(0, Math.round(percentDominados / 20)));
+    // Converter para escala 1-5 por faixas oficiais VB-MAPP Transição
+    // Item 1: Pontuação total dos Marcos (total bruto 0-170)
+    const t1 = totalDominados;
+    const item1Score = t1 <= 25 ? 1 : t1 <= 50 ? 2 : t1 <= 100 ? 3 : t1 <= 135 ? 4 : 5;
 
-    // Item 2: Barreiras (invertido - menor escore de barreiras = maior pontuação)
-    // Escore máximo de barreiras = 96, então invertemos
-    const item2Score = Math.min(5, Math.max(0, Math.round((96 - escoreBarreirasTotal) / 19)));
+    // Item 2: Barreiras total (invertido: maior escore = pior = score menor)
+    const b2 = escoreBarreirasTotal;
+    const item2Score = b2 >= 56 ? 1 : b2 >= 31 ? 2 : b2 >= 21 ? 3 : b2 >= 11 ? 4 : 5;
 
-    // Item 3: Barreiras 1 e 2 (invertido)
-    // Máximo = 8, então invertemos
-    const item3Score = Math.min(5, Math.max(0, Math.round((8 - escoreBarreiras1_2) / 1.6)));
+    // Item 3: Barreiras 1+2 (invertido)
+    const b3 = escoreBarreiras1_2;
+    const item3Score = b3 >= 6 ? 1 : b3 === 5 ? 2 : b3 >= 3 ? 3 : b3 === 2 ? 4 : 5;
 
-    // Item 4: Rotinas de Classe (máximo 10 pontos no VB-MAPP)
+    // Item 4: Rotinas de Classe — mantido sem alteração (bate ranges principais)
     const item4Score = Math.min(5, Math.max(0, Math.round(pontosRotina / 2)));
 
-    // Item 5: Comportamento Social (máximo 15 pontos no VB-MAPP)
-    const item5Score = Math.min(5, Math.max(0, Math.round(pontosSocial / 3)));
+    // Item 5: Comportamento Social e Brincar Social — DOM06 apenas
+    const item5Score = Math.min(5, Math.max(1, Math.floor(pontosSocial / 2)));
 
     return {
       item_1: item1Score,
@@ -319,7 +319,7 @@ export function useTransicaoLogic(sessionInfo, milestonesData, barreirasData, is
       raw: {
         totalDominados,
         totalMilestones,
-        percentDominados: percentDominados.toFixed(1),
+        percentDominados: totalMilestones > 0 ? ((totalDominados / totalMilestones) * 100).toFixed(1) : '0.0',
         escoreBarreirasTotal,
         escoreBarreiras1_2,
         pontosRotina,
