@@ -83,6 +83,10 @@ Não foi criada.
 
 Motivo: a aba `AV TAREFAS` não contém seção de tarefas para Vocal. O app usa fallback seguro quando não há task analysis real.
 
+### Limpeza técnica — `src/data/transicao.js`
+
+Removido o arquivo órfão `src/data/transicao.js` (não importado em `src/`), que duplicava a estrutura da Transição e mantinha `calculateAutoItems` com a lógica antiga (pré-Patch 10C), divergente das faixas oficiais hoje vigentes em `src/hooks/useTransicaoLogic.js`. Sem impacto em runtime; build validado.
+
 ## Pendências ainda abertas
 
 1. Validar manualmente o fluxo completo:

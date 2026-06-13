@@ -67,8 +67,17 @@ A lógica anterior (fórmula linear / percentual / divisão fixa) foi substituí
 - Sem `session.ecoico_summary`, nada aparece no PDF.
 - Build validado após o patch.
 
+## Limpeza técnica — remoção de `src/data/transicao.js`
+
+O arquivo `src/data/transicao.js` foi **removido** por ser código órfão / morto:
+
+- não era importado por nenhum arquivo em `src/` (fluxo vivo: `SessionController.jsx → TransicaoScreen.jsx → useTransicaoLogic.js`);
+- continha `TRANSICAO_ESTRUTURA` duplicada e a função `calculateAutoItems` com a **lógica antiga** (percentual linear nos marcos, fórmula linear nas barreiras, item 5 com divisor antigo), divergente das faixas oficiais do Patch 10C já vigentes em `useTransicaoLogic.js`.
+
+Risco da remoção: nenhum em runtime — build validado, nenhum import quebrado. A fonte canônica da Transição (estrutura + cálculo por faixas oficiais) permanece em `useTransicaoLogic.js`, intacta.
+
 ## Pendências abertas
 
 - Smoke test manual completo (paciente fictício → Marcos → Barreiras → Transição → PDF).
-- Revisar `src/data/transicao.js` (pode estar duplicado ou morto).
+- ~~Revisar `src/data/transicao.js` (pode estar duplicado ou morto).~~ **Resolvido:** arquivo órfão removido (ver seção "Limpeza técnica — remoção de `src/data/transicao.js`").
 - Ecoico (escopo separado): decisão futura sobre reativar ou não o subteste no fluxo (ver seção "Patch PDF Ecoico").
