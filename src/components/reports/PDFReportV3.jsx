@@ -691,22 +691,22 @@ const PDFReportV3 = ({
                         </div>
                     )}
                     
-                    {session.transicao.valoresAutomaticos && Object.keys(session.transicao.valoresAutomaticos).filter(k => k.startsWith('T') && parseInt(k.substring(1)) <= 5).length > 0 && (
+                    {session.transicao.valoresAutomaticos && Object.keys(session.transicao.valoresAutomaticos).filter(k => k.startsWith('item_') && parseInt(k.replace('item_', '')) <= 5).length > 0 && (
                         <div style={{ backgroundColor: '#fefefe', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '12px', pageBreakInside: 'avoid' }}>
                             <h3 style={{ fontSize: '15px', color: '#2d3748', marginBottom: '12px', fontWeight: 'bold' }}>Itens Automáticos (1-5)</h3>
                             <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', color: '#4a5568', lineHeight: '1.6' }}>
-                                {Object.entries(session.transicao.valoresAutomaticos).filter(([k,v]) => k.startsWith('T') && parseInt(k.substring(1)) <= 5).map(([k, v]) => (
+                                {Object.entries(session.transicao.valoresAutomaticos).filter(([k,v]) => k.startsWith('item_') && parseInt(k.replace('item_', '')) <= 5).map(([k, v]) => (
                                     <li key={k}><strong>{k}</strong>: {v} pontos</li>
                                 ))}
                             </ul>
                         </div>
                     )}
 
-                    {session.transicao.avaliacoes && Object.keys(session.transicao.avaliacoes).filter(k => k.startsWith('T') && parseInt(k.substring(1)) >= 6).length > 0 && (
+                    {session.transicao.avaliacoes && Object.keys(session.transicao.avaliacoes).filter(k => k.startsWith('item_') && parseInt(k.replace('item_', '')) >= 6).length > 0 && (
                         <div style={{ backgroundColor: '#fefefe', padding: '16px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '12px', pageBreakInside: 'avoid' }}>
                             <h3 style={{ fontSize: '15px', color: '#2d3748', marginBottom: '12px', fontWeight: 'bold' }}>Itens Manuais (6-18)</h3>
                             <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', color: '#4a5568', lineHeight: '1.6' }}>
-                                {Object.entries(session.transicao.avaliacoes).filter(([k,v]) => k.startsWith('T') && parseInt(k.substring(1)) >= 6).map(([k, v]) => (
+                                {Object.entries(session.transicao.avaliacoes).filter(([k,v]) => k.startsWith('item_') && parseInt(k.replace('item_', '')) >= 6).map(([k, v]) => (
                                     <li key={k}><strong>{k}</strong>: {v.pontuacao !== undefined ? v.pontuacao : v} pontos</li>
                                 ))}
                             </ul>

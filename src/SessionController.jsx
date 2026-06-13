@@ -491,7 +491,21 @@ export default function SessionController({
             return (
                 <TransicaoScreen
                     sessionInfo={selectedSession}
-                    onFinalize={(payload) => updateSession({ ...payload, transicao_completa: true })}
+                    onFinalize={(payload) => updateSession({
+                        ...payload,
+                        transicao: {
+                            valoresAutomaticos: payload.valores_automaticos,
+                            avaliacoes: payload.itens_manuais,
+                            escores: {
+                                totalGeral: payload.escore_total_transicao,
+                                categorias: payload.escores_por_categoria
+                            },
+                            escore_total_transicao: payload.escore_total_transicao,
+                            date_transicao: payload.date_transicao,
+                            transicao_schema_version: payload.transicao_schema_version
+                        },
+                        transicao_completa: true
+                    })}
                     onBack={backToList}
                     isReadOnly={isReadOnly}
                 />
