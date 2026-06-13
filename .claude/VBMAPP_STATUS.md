@@ -44,6 +44,7 @@ Correções aplicadas:
 - `95da011` — `fix: pontua emergente como meio ponto`
 - `7d620a2` — `fix: considera barreiras relevantes no PEI`
 - `6276dab` — `fix: alinha transicao automatica por faixas oficiais`
+- `ebe9272` — `fix: conecta transicao ao PDF VB-MAPP`
 
 ## Tags relevantes
 
@@ -79,7 +80,8 @@ Motivo: a aba `AV TAREFAS` não contém seção de tarefas para Vocal. O app usa
 
 2. Transição:
    - itens automáticos 1, 2, 3 e 5 corrigidos por faixas oficiais (Patch 10C, commit `6276dab`).
-   - pendente: validação manual do fluxo completo e revisão de possível mismatch no PDF.
+   - PDF conectado: `session.transicao` aninhado criado em `SessionController`; filtros de chave corrigidos em `PDFReportV3` (commit `ebe9272`).
+   - pendente: smoke test manual completo; sessões antigas sem `session.transicao` precisam de re-finalização para exibir no PDF.
 
 3. Ecoico:
    - planilha possui 100 estímulos fixos;

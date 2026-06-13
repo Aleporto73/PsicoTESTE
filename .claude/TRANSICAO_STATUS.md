@@ -4,11 +4,12 @@ Data: 13/06/2026
 
 ## Estado
 
-Patch 10C aplicado e build validado.
+Patch 10C e Patch PDF aplicados. Build validado em ambos.
 
-Commit: `6276dab` — `fix: alinha transicao automatica por faixas oficiais`
-
-Arquivo alterado: `src/hooks/useTransicaoLogic.js`
+| Commit | Arquivo | O que fez |
+|--------|---------|-----------|
+| `6276dab` | `src/hooks/useTransicaoLogic.js` | Itens automáticos 1, 2, 3, 5 → lookup por faixas oficiais |
+| `ebe9272` | `src/SessionController.jsx` + `src/components/reports/PDFReportV3.jsx` | Conecta Transição ao PDF |
 
 ## Veredito
 
@@ -35,11 +36,27 @@ A lógica anterior (fórmula linear / percentual / divisão fixa) foi substituí
 - Barreiras (itens 2 e 3) permanecem invertidas: maior pontuação de barreira = score menor na Transição.
 - `pontosBrincar` (DOM05) permanece acumulado no código mas não é usado — limpeza pode ser feita em patch separado.
 - Nenhuma alteração em itens manuais 6–18.
-- Nenhuma alteração em PDF, PEI ou `src/data/transicao.js`.
+- Nenhuma alteração em PEI ou `src/data/transicao.js`.
+
+## Conexão com o PDF (commit `ebe9272`)
+
+`SessionController.jsx` — o `onFinalize` da Transição agora:
+
+1. Preserva o payload na raiz via `...payload` (retrocompatibilidade).
+2. Cria `session.transicao` aninhado com os campos renomeados que o PDF espera:
+   - `valoresAutomaticos` ← `payload.valores_automaticos`
+   - `avaliacoes` ← `payload.itens_manuais`
+   - `escores.totalGeral` ← `payload.escore_total_transicao`
+   - `escores.categorias` ← `payload.escores_por_categoria`
+
+`PDFReportV3.jsx` — filtros de chave corrigidos:
+- Automáticos: `item_1`…`item_5` (antes: `T1`…`T5`, zero matches)
+- Manuais: `item_6`…`item_18` (antes: `T6`…`T18`, zero matches)
+
+**Ressalva:** sessões finalizadas antes deste patch têm `session.transicao = undefined` no localStorage. A seção de Transição continuará invisível no PDF para essas sessões sem re-finalização ou migração de dados.
 
 ## Pendências abertas
 
-- Validar fluxo completo manualmente (paciente fictício → Marcos → Barreiras → Transição → PDF).
-- Revisar possível mismatch de schema da Transição no PDF.
-- Decidir o que fazer com `src/data/transicao.js` (pode estar duplicado ou morto).
+- Smoke test manual completo (paciente fictício → Marcos → Barreiras → Transição → PDF).
+- Revisar `src/data/transicao.js` (pode estar duplicado ou morto).
 - Revisar Ecoico futuramente (escopo separado).
