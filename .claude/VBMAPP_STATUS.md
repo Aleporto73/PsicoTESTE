@@ -1,6 +1,6 @@
 ﻿# PsicoTESTE — VB-MAPP Status Técnico
 
-Data: 12/06/2026  
+Data: 13/06/2026  
 Repo: `C:\PsicoTESTE`  
 Status: VB-MAPP alinhado com a planilha XLSX base em 160 marcos.
 
@@ -31,12 +31,16 @@ Correções aplicadas:
 3. Adição do domínio `DOM09 — Comportamento Vocal Espontâneo`, com 5 marcos de Nível 1.
 4. Atualização de totais para 160 marcos.
 5. Preservação do Ecoico como subteste separado.
+6. Pontuação ponderada de marcos: `dominado = 1`, `emergente = 0.5`, `nao_observado = 0`, `NA/desconhecido = excluído do denominador`.
+7. Emergente continua gerando lacuna e pode alimentar PEI como alvo de intervenção.
+8. Não replicar o valor `5` da planilha Excel; o `5` representava limitação de formatação, não regra clínica.
 
 ## Commits relevantes
 
 - `c93e878` — `fix: protege schema estrutural contra remigracao DOM`
 - `61f6765` — `fix: adiciona marco DOM10-L3-M15 conforme planilha`
 - `28d70f8` — `feat: adiciona DOM09 Vocal conforme planilha`
+- `95da011` — `fix: pontua emergente como meio ponto`
 
 ## Tags relevantes
 
@@ -65,32 +69,21 @@ Não foi criada.
 
 Motivo: a aba `AV TAREFAS` não contém seção de tarefas para Vocal. O app usa fallback seguro quando não há task analysis real.
 
-## Pendências antes de uso clínico real
+## Pendências ainda abertas
 
-1. Validar manualmente fluxo completo:
-   - paciente fictício;
-   - Marcos;
-   - Barreiras;
-   - Transição;
-   - Lacunas;
-   - PEI;
-   - PDF.
+1. Validar manualmente o fluxo completo:
+   - paciente fictício → Marcos → Barreiras → Transição → Lacunas → PEI → PDF.
 
-2. Decidir regra de `emergente`:
-   - planilha soma `0,5`;
-   - app trata como lacuna e pode computar como 0 em alguns cálculos.
+2. Transição:
+   - ainda há divergência entre a soma bruta da planilha e a normalização/inversão do app.
 
-3. Revisar Transição:
-   - planilha usa somas brutas em itens automáticos;
-   - app usa normalização/inversão em alguns pontos.
-
-4. Revisar limiar de barreiras no PEI:
+3. Barreiras no PEI:
    - planilha puxa barreiras 2–4;
-   - app usa críticas >= 3.
+   - app ainda usa `>= 3` na camada de conformidade.
 
-5. Ecoico:
+4. Ecoico:
    - planilha possui 100 estímulos fixos;
-   - app ainda não implementa todos os estímulos da planilha.
+   - app ainda não implementa todos e o gatilho está desativado.
 
 ## Veredito atual
 
