@@ -45,6 +45,7 @@ Correções aplicadas:
 - `7d620a2` — `fix: considera barreiras relevantes no PEI`
 - `6276dab` — `fix: alinha transicao automatica por faixas oficiais`
 - `ebe9272` — `fix: conecta transicao ao PDF VB-MAPP`
+- `3d21fda` — `fix: renderiza ecoico no PDF quando disponivel`
 
 ## Tags relevantes
 
@@ -60,6 +61,15 @@ Correções aplicadas:
 Permanece fora dos milestones lineares.
 
 Motivo: a planilha trata Ecoico como subteste separado, não como domínio linear dentro da grade principal de marcos.
+
+**Patch PDF Ecoico (commit `3d21fda`):** `PDFReportV3.jsx` passou a renderizar uma seção "Subteste Ecoico" (resumo interpretativo, pontuação total, marco estimado e recomendação) **apenas quando `session.ecoico_summary` existir**. Sem `ecoico_summary`, nada aparece no PDF.
+
+O patch é puramente aditivo / de exibição:
+
+- não reativou o subteste Ecoico — o gatilho continua desativado no fluxo principal;
+- não alterou cálculo, PEI, milestones nem lógica clínica;
+- leu apenas `session.ecoico_summary`, com fallbacks seguros para campos ausentes;
+- build validado após o patch.
 
 ### DOM09 Vocal
 
@@ -85,7 +95,9 @@ Motivo: a aba `AV TAREFAS` não contém seção de tarefas para Vocal. O app usa
 
 3. Ecoico:
    - planilha possui 100 estímulos fixos;
-   - app ainda não implementa todos e o gatilho está desativado.
+   - app ainda não implementa todos e o gatilho continua desativado no fluxo principal;
+   - PDF: `PDFReportV3.jsx` já renderiza a seção "Subteste Ecoico" quando `session.ecoico_summary` existir (commit `3d21fda`); sem `ecoico_summary`, nada aparece no PDF;
+   - pendente: smoke test manual completo (ver pendência 1); decisão futura sobre reativar ou não o Ecoico no fluxo.
 
 ## Veredito atual
 

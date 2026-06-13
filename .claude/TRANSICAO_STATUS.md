@@ -55,8 +55,20 @@ A lógica anterior (fórmula linear / percentual / divisão fixa) foi substituí
 
 **Ressalva:** sessões finalizadas antes deste patch têm `session.transicao = undefined` no localStorage. A seção de Transição continuará invisível no PDF para essas sessões sem re-finalização ou migração de dados.
 
+## Patch PDF Ecoico (escopo separado da Transição)
+
+| Commit | Arquivo | O que fez |
+|--------|---------|-----------|
+| `3d21fda` | `src/components/reports/PDFReportV3.jsx` | Renderiza seção "Subteste Ecoico" no PDF quando `session.ecoico_summary` existir |
+
+- Ecoico continua **desativado no fluxo principal** — o patch **não** reativou o subteste.
+- Não alterou cálculo, PEI, milestones nem lógica clínica.
+- Renderiza resumo interpretativo, pontuação total, marco estimado e recomendação, com fallbacks seguros para campos ausentes.
+- Sem `session.ecoico_summary`, nada aparece no PDF.
+- Build validado após o patch.
+
 ## Pendências abertas
 
 - Smoke test manual completo (paciente fictício → Marcos → Barreiras → Transição → PDF).
 - Revisar `src/data/transicao.js` (pode estar duplicado ou morto).
-- Revisar Ecoico futuramente (escopo separado).
+- Ecoico (escopo separado): decisão futura sobre reativar ou não o subteste no fluxo (ver seção "Patch PDF Ecoico").
