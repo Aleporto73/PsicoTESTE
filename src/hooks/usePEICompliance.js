@@ -107,9 +107,9 @@ export default function usePEICompliance(sessionInfo) {
       .map(([domCode]) => DOMAIN_NAMES_EXPANDED[domCode] || domCode)
       .sort();
 
-    // Barreiras críticas (pontuação >= 3)
-    const criticalBarriers = (barreiras || [])
-      .filter(b => b.pontuacao >= 3)
+    // Barreiras relevantes para o PEI (pontuação >= 2, conforme planilha: 2 a 4)
+    const relevantBarriers = (barreiras || [])
+      .filter(b => b.pontuacao >= 2)
       .map(b => b.nome || b.categoria || b.label || b.title || 'Barreira não identificada')
       .filter(Boolean)
       .sort();
@@ -120,8 +120,8 @@ export default function usePEICompliance(sessionInfo) {
     let barreirasDemandas = '';
     barreirasDemandas += `Estatísticas Gerais: ${totalDominados} habilidades dominadas (${percentDominados}%), ${totalEmergentes} emergentes (${percentEmergentes}%).\n\n`;
 
-    if (criticalBarriers.length > 0) {
-      barreirasDemandas += `Barreiras Críticas Identificadas: ${criticalBarriers.join(', ')}.\n\n`;
+    if (relevantBarriers.length > 0) {
+      barreirasDemandas += `Barreiras Relevantes Identificadas: ${relevantBarriers.join(', ')}.\n\n`;
     }
 
     if (weakDomains.length > 0) {
@@ -153,11 +153,11 @@ export default function usePEICompliance(sessionInfo) {
     // ─────────────────────────────────────────────────────────
     let estrategiasAcessibilidade = '';
 
-    // Mapear barreiras críticas para estratégias
-    if (criticalBarriers.length > 0) {
+    // Mapear barreiras relevantes para estratégias
+    if (relevantBarriers.length > 0) {
       estrategiasAcessibilidade += `Estratégias para Barreiras Identificadas:\n`;
 
-      criticalBarriers.slice(0, 3).forEach(barrierName => {
+      relevantBarriers.slice(0, 3).forEach(barrierName => {
         const normalizedName = barrierName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         
         // Tentar encontrar chave correspondente no BARRIER_STRATEGY_MAP
@@ -275,9 +275,9 @@ export default function usePEICompliance(sessionInfo) {
   const generateAdaptations = useCallback((barreiras = [], objectives = []) => {
     const adaptations = {};
 
-    // Barreiras críticas (pontuação >= 3)
-    const criticalBarriers = (barreiras || [])
-      .filter(b => b.pontuacao >= 3)
+    // Barreiras relevantes para o PEI (pontuação >= 2, conforme planilha: 2 a 4)
+    const relevantBarriers = (barreiras || [])
+      .filter(b => b.pontuacao >= 2)
       .map(b => b.nome || b.categoria || b.label || b.title || 'Barreira não identificada')
       .filter(Boolean)
       .sort();
