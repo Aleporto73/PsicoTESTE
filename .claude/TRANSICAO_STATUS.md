@@ -4,54 +4,42 @@ Data: 13/06/2026
 
 ## Estado
 
-A Transição foi auditada em modo READ-ONLY.
+Patch 10C aplicado e build validado.
 
-Nenhum arquivo de código foi alterado.
-Nenhum patch de Transição foi aplicado.
-Nenhum commit de Transição foi feito.
+Commit: `6276dab` — `fix: alinha transicao automatica por faixas oficiais`
+
+Arquivo alterado: `src/hooks/useTransicaoLogic.js`
 
 ## Veredito
 
-TRANSIÇÃO DIVERGENTE.
+TRANSIÇÃO CORRIGIDA POR FAIXAS OFICIAIS.
 
-A planilha `AV TRANSIÇÃO` usa soma bruta/referência bruta nos itens automáticos 1 a 5.
+Os itens automáticos 1, 2, 3 e 5 foram reescritos para usar conversão por ranges 1–5 conforme o protocolo VB-MAPP Transição.
 
-O app, em `src/hooks/useTransicaoLogic.js`, usa normalização/inversão nos itens automáticos 1 a 5.
+A lógica anterior (fórmula linear / percentual / divisão fixa) foi substituída por lookup de faixas exato.
 
-## Itens divergentes
+## Itens automáticos — situação atual
 
-1. Pontuação total dos Marcos
-2. Pontuação geral das Barreiras
-3. Barreiras 1 + 2
-4. Habilidade de grupo / rotina
-5. Comportamento social / brincar
+| Item | Descrição | Status |
+|------|-----------|--------|
+| 1 | Pontuação total dos Marcos | Corrigido — lookup por total bruto (0-170) |
+| 2 | Pontuação geral das Barreiras | Corrigido — lookup invertido (56-96=1 … 0-10=5) |
+| 3 | Barreiras 1 + 2 | Corrigido — lookup invertido (6-7=1 … 0-1=5) |
+| 4 | Habilidade de grupo / rotina | Intacto — bate os ranges principais |
+| 5 | Comportamento social / brincar | Corrigido — `Math.floor(pontosSocial/2)`, DOM06 apenas |
 
-## Decisão pendente
+## Decisões técnicas registradas
 
-Ainda não foi decidido se o app deve:
-
-A) espelhar literalmente a planilha com soma bruta;
-
-ou
-
-B) manter uma lógica interpretativa própria, documentada separadamente.
-
-## Recomendação atual
-
-Não aplicar patch de Transição até decisão explícita do Ale.
-
-Antes de qualquer patch, revisar impacto em:
-
-- sessões antigas;
-- PDF;
-- tela de Transição;
-- interpretação clínica;
-- `src/data/transicao.js`, que pode estar duplicado ou morto.
+- Item 1 usa o total bruto de pontos dos marcos (dominado=1, emergente=0.5), não percentual.
+- Item 5 usa exclusivamente DOM06 ("Comportamento Social E Brincar Social"). DOM05 ("Brincar Independente") não entra — já coberto pelo item manual 15.
+- Barreiras (itens 2 e 3) permanecem invertidas: maior pontuação de barreira = score menor na Transição.
+- `pontosBrincar` (DOM05) permanece acumulado no código mas não é usado — limpeza pode ser feita em patch separado.
+- Nenhuma alteração em itens manuais 6–18.
+- Nenhuma alteração em PDF, PEI ou `src/data/transicao.js`.
 
 ## Pendências abertas
 
-- Decidir regra final da Transição.
-- Revisar mismatch de schema da Transição no PDF.
-- Decidir o que fazer com `src/data/transicao.js`.
-- Fazer smoke test manual completo.
-- Revisar Ecoico futuramente.
+- Validar fluxo completo manualmente (paciente fictício → Marcos → Barreiras → Transição → PDF).
+- Revisar possível mismatch de schema da Transição no PDF.
+- Decidir o que fazer com `src/data/transicao.js` (pode estar duplicado ou morto).
+- Revisar Ecoico futuramente (escopo separado).

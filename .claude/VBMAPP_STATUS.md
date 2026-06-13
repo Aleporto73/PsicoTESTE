@@ -43,6 +43,7 @@ Correções aplicadas:
 - `28d70f8` — `feat: adiciona DOM09 Vocal conforme planilha`
 - `95da011` — `fix: pontua emergente como meio ponto`
 - `7d620a2` — `fix: considera barreiras relevantes no PEI`
+- `6276dab` — `fix: alinha transicao automatica por faixas oficiais`
 
 ## Tags relevantes
 
@@ -77,7 +78,8 @@ Motivo: a aba `AV TAREFAS` não contém seção de tarefas para Vocal. O app usa
    - paciente fictício → Marcos → Barreiras → Transição → Lacunas → PEI → PDF.
 
 2. Transição:
-   - ainda há divergência entre a soma bruta da planilha e a normalização/inversão do app.
+   - itens automáticos 1, 2, 3 e 5 corrigidos por faixas oficiais (Patch 10C, commit `6276dab`).
+   - pendente: validação manual do fluxo completo e revisão de possível mismatch no PDF.
 
 3. Ecoico:
    - planilha possui 100 estímulos fixos;
