@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { TASK_ANALYSIS_MAP } from '../data/taskAnalysis';
+import { pontuarMarco } from '../data/constants';
 
 export function useMilestoneLogic(sessionInfo, data) {
   // ============================================
@@ -263,6 +264,11 @@ export function useMilestoneLogic(sessionInfo, data) {
           ?.filter(Boolean) || [];
 
         if (domainScores.length > 0) {
+          // Pontuação ponderada: dominado=1, emergente=0,5, nao_observado=0
+          const pontosDominio = domainScores.reduce((soma, st) => {
+            const p = pontuarMarco(st);
+            return soma + (p === null ? 0 : p);
+          }, 0);
           domainStats[domain.domain_id] = {
             domain_name: domain.domain_name,
             total_blocks: domain.blocks?.length || 0,
@@ -270,7 +276,9 @@ export function useMilestoneLogic(sessionInfo, data) {
             dominado: domainScores.filter(s => s === 'dominado').length,
             emergente: domainScores.filter(s => s === 'emergente').length,
             nao_observado: domainScores.filter(s => s === 'nao_observado').length,
-            percent_dominado: ((domainScores.filter(s => s === 'dominado').length / domainScores.length) * 100).toFixed(1)
+            pontos: pontosDominio,
+            // % ponderado (emergente conta 0,5), não apenas dominados
+            percent_dominado: ((pontosDominio / domainScores.length) * 100).toFixed(1)
           };
         }
       });

@@ -146,6 +146,29 @@ export const SCORE_STATUS = {
 };
 
 // ═══════════════════════════════════════════════════════════════
+// MILESTONE WEIGHTS (pontuação clínica VB-MAPP)
+// dominado = 1 ponto | emergente = 0,5 ponto | nao_observado = 0
+// NA / status desconhecido = null → EXCLUÍDO do denominador.
+// Obs.: NÃO usar o "5" da planilha Excel (limitação de formatação do
+// Excel, não regra clínica). A meia-pontuação clínica é 0,5.
+// ═══════════════════════════════════════════════════════════════
+export const MILESTONE_WEIGHTS = {
+  dominado: 1,
+  emergente: 0.5,
+  nao_observado: 0
+};
+
+/**
+ * Retorna a pontuação clínica de um marco.
+ * @param {string} status - 'dominado' | 'emergente' | 'nao_observado'
+ * @returns {number|null} 1 | 0.5 | 0 ; null se NA/desconhecido (excluir do cálculo)
+ */
+export function pontuarMarco(status) {
+  if (status in MILESTONE_WEIGHTS) return MILESTONE_WEIGHTS[status];
+  return null; // NA / não avaliado → excluído
+}
+
+// ═══════════════════════════════════════════════════════════════
 // LOCALSTORAGE KEYS
 // Chaves para armazenamento local
 // ═══════════════════════════════════════════════════════════════

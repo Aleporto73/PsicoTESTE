@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { DOMAIN_NAMES_EXPANDED, BARRIERS_NAMES } from '../data/constants';
+import { DOMAIN_NAMES_EXPANDED, BARRIERS_NAMES, pontuarMarco } from '../data/constants';
 import {
   ESTUDO_CASO_FIELDS,
   TIME_HORIZONS,
@@ -30,6 +30,7 @@ export default function usePEICompliance(sessionInfo) {
         dominado: 0,
         emergente: 0,
         nao_observado: 0,
+        pontos: 0,
         total: 0,
         percentDominado: 0
       };
@@ -46,12 +47,13 @@ export default function usePEICompliance(sessionInfo) {
           dominado: 0,
           emergente: 0,
           nao_observado: 0,
+          pontos: 0,
           total: 0,
           percentDominado: 0
         };
       }
 
-      // Incrementar contagem
+      // Contagem factual por categoria (mantida para a narrativa do estudo de caso)
       if (status === 'dominado') {
         domainStats[domCode].dominado += 1;
       } else if (status === 'emergente') {
@@ -60,13 +62,18 @@ export default function usePEICompliance(sessionInfo) {
         domainStats[domCode].nao_observado += 1;
       }
 
-      domainStats[domCode].total += 1;
+      // Pontuação ponderada: dominado=1, emergente=0,5, nao_observado=0, NA=excluído
+      const pontos = pontuarMarco(status);
+      if (pontos !== null) {
+        domainStats[domCode].pontos += pontos;
+        domainStats[domCode].total += 1;
+      }
     });
 
-    // Calcular percentuais
+    // Calcular percentuais (ponderados: emergente conta 0,5)
     Object.entries(domainStats).forEach(([domCode, stats]) => {
       if (stats.total > 0) {
-        stats.percentDominado = (stats.dominado / stats.total) * 100;
+        stats.percentDominado = (stats.pontos / stats.total) * 100;
       }
     });
 

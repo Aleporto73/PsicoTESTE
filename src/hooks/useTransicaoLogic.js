@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { pontuarMarco } from '../data/constants';
 
 const TRANSICAO_ESTRUTURA = {
   categorias: [
@@ -257,20 +258,21 @@ export function useTransicaoLogic(sessionInfo, milestonesData, barreirasData, is
     let pontosBrincar = 0;
 
     Object.entries(scores).forEach(([blockId, status]) => {
+      // Peso clínico: dominado=1, emergente=0,5, nao_observado=0, NA=excluído
+      const pontos = pontuarMarco(status);
+      if (pontos === null) return; // NA / desconhecido → fora do denominador
       totalMilestones++;
-      if (status === 'dominado') {
-        totalDominados++;
+      totalDominados += pontos;
 
-        // Verificar domínio específico pelo block_id
-        if (blockId.startsWith('DOM12')) {
-          pontosRotina++;
-        }
-        if (blockId.startsWith('DOM06')) {
-          pontosSocial++;
-        }
-        if (blockId.startsWith('DOM05')) {
-          pontosBrincar++;
-        }
+      // Verificar domínio específico pelo block_id (pontuação ponderada)
+      if (blockId.startsWith('DOM12')) {
+        pontosRotina += pontos;
+      }
+      if (blockId.startsWith('DOM06')) {
+        pontosSocial += pontos;
+      }
+      if (blockId.startsWith('DOM05')) {
+        pontosBrincar += pontos;
       }
     });
 
