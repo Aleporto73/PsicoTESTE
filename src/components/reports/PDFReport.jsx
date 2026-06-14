@@ -333,19 +333,28 @@ function gerarRelatorioTecnico(crianca, sessao) {
     doc.text('Status', marginLeft + 160, y + 6);
     y += 10;
 
+    // Largura disponível para o nome da barreira (antes da coluna "Nível", em marginLeft + 140)
+    const larguraNomeBarreira = 120;
+    const alturaLinhaTexto = 4;
+
     dados.barreiras.forEach((barreira, idx) => {
-        checkSpace(8);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+
+        // Quebra o nome em várias linhas em vez de truncar, para nomes longos aparecerem completos
+        const linhasNome = doc.splitTextToSize(barreira.nome, larguraNomeBarreira);
+        const alturaLinhaBarreira = Math.max(8, linhasNome.length * alturaLinhaTexto + 3);
+
+        checkSpace(alturaLinhaBarreira);
 
         if (idx % 2 === 0) {
             doc.setFillColor(250, 250, 250);
-            doc.rect(marginLeft, y - 4, contentWidth, 8, 'F');
+            doc.rect(marginLeft, y - 4, contentWidth, alturaLinhaBarreira, 'F');
         }
 
         doc.setTextColor(...CORES.preto);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
         doc.text(`${idx + 1}`, marginLeft + 5, y + 2);
-        doc.text(barreira.nome.substring(0, 50), marginLeft + 15, y + 2);
+        doc.text(linhasNome, marginLeft + 15, y + 2);
 
         const nivel = barreira.pontuacao || 0;
         const corNivel = nivel >= 3 ? CORES.vermelho : nivel >= 2 ? CORES.amarelo : CORES.verde;
@@ -356,7 +365,7 @@ function gerarRelatorioTecnico(crianca, sessao) {
         const status = nivel >= 3 ? 'Crítico' : nivel >= 2 ? 'Atenção' : 'OK';
         doc.text(status, marginLeft + 160, y + 2);
 
-        y += 8;
+        y += alturaLinhaBarreira;
     });
 
     y += 15;
@@ -912,16 +921,23 @@ function gerarPEICompleto(crianca, sessao) {
 
     y += 50;
 
-    // Assinaturas
-    checkSpace(40);
+    // Assinaturas — duas colunas separadas, com rótulo centralizado sob cada linha
+    checkSpace(48);
+    y += 8;
+
+    const larguraColAssinatura = (contentWidth - 20) / 2;
+    const col1XAssinatura = marginLeft;
+    const col2XAssinatura = marginLeft + larguraColAssinatura + 20;
+
     doc.setDrawColor(...CORES.preto);
-    doc.line(marginLeft, y, marginLeft + 70, y);
-    doc.line(marginLeft + 110, y, pageWidth - marginRight, y);
+    doc.line(col1XAssinatura, y, col1XAssinatura + larguraColAssinatura, y);
+    doc.line(col2XAssinatura, y, col2XAssinatura + larguraColAssinatura, y);
 
     y += 5;
     doc.setFontSize(9);
-    doc.text('Profissional Responsável', marginLeft, y);
-    doc.text('Responsável pelo Aluno', marginLeft + 110, y);
+    doc.setTextColor(...CORES.preto);
+    doc.text('Profissional Responsável', col1XAssinatura + larguraColAssinatura / 2, y, { align: 'center' });
+    doc.text('Responsável pelo Aluno', col2XAssinatura + larguraColAssinatura / 2, y, { align: 'center' });
 
     // Rodapé
     const totalPages = doc.internal.getNumberOfPages();
