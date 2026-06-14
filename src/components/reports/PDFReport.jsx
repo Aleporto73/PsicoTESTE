@@ -166,6 +166,23 @@ function getCorPorPercentual(percentual) {
     return CORES.vermelho;
 }
 
+// Rótulos amigáveis para os tipos de métrica do PEI (apenas exibição — não altera cálculo)
+function getNomeMetrica(tipo) {
+    const NOMES_METRICAS = {
+        percent: 'Porcentagem de acerto',
+        frequency: 'Frequência',
+        duration: 'Duração',
+        independence: 'Independência',
+        trials: 'Tentativas corretas'
+    };
+    return NOMES_METRICAS[tipo] || tipo || 'N/A';
+}
+
+// Plural automático: usa o singular quando a quantidade é exatamente 1
+function pluralizar(quantidade, singular, plural) {
+    return `${quantidade} ${Number(quantidade) === 1 ? singular : plural}`;
+}
+
 // ==========================================
 // 1. RELATÓRIO TÉCNICO
 // ==========================================
@@ -433,7 +450,7 @@ function gerarRelatorioTecnico(crianca, sessao) {
         doc.setTextColor(...CORES.preto);
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
-        doc.text(`${dados.emergentes} habilidades próximas a serem dominadas. Oportunidade de progresso rápido.`, marginLeft + 5, y + 16);
+        doc.text(`${pluralizar(dados.emergentes, 'habilidade próxima a ser dominada', 'habilidades próximas a serem dominadas')}. Oportunidade de progresso rápido.`, marginLeft + 5, y + 16);
 
         y += 30;
     }
@@ -598,7 +615,7 @@ function gerarPEICompleto(crianca, sessao) {
         doc.setTextColor(...CORES.preto);
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
-        doc.text(`Quantidade: ${Math.min(dados.emergentes, 5)} habilidades`, marginLeft + 5, y + 20);
+        doc.text(`Quantidade: ${pluralizar(Math.min(dados.emergentes, 5), 'habilidade', 'habilidades')}`, marginLeft + 5, y + 20);
         doc.text('Objetivo: Transformar emergentes em dominados', marginLeft + 5, y + 27);
         doc.text('Prazo: 12 semanas', marginLeft + 5, y + 34);
         doc.text('Critério: 80% de acerto em 3 sessões consecutivas sem dica', marginLeft + 5, y + 41);
@@ -733,7 +750,7 @@ function gerarPEICompleto(crianca, sessao) {
                         doc.text(descLinhas, marginLeft + 5, y);
                         y += descLinhas.length * 4;
 
-                        doc.text(`Métrica: ${obj.metricType || 'N/A'}`, marginLeft + 5, y);
+                        doc.text(`Métrica: ${getNomeMetrica(obj.metricType)}`, marginLeft + 5, y);
                         y += 4;
                         doc.text(`Base: ${obj.baseline || 'N/A'} | Meta: ${obj.target || 'N/A'}`, marginLeft + 5, y);
                         y += 4;
@@ -988,7 +1005,7 @@ function gerarResumoFamilia(crianca, sessao) {
             checkSpace(10);
             doc.setFillColor(...CORES.verde);
             doc.circle(marginLeft + 4, y + 2, 2, 'F');
-            doc.text(`${dom.nome}: ${dom.dominados} habilidades dominadas!`, marginLeft + 12, y + 4);
+            doc.text(`${dom.nome}: ${pluralizar(dom.dominados, 'habilidade dominada', 'habilidades dominadas')}!`, marginLeft + 12, y + 4);
             y += 9;
         });
 
@@ -998,7 +1015,7 @@ function gerarResumoFamilia(crianca, sessao) {
         doc.setTextColor(...CORES.verde);
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.text(`Total: ${dados.dominados} habilidades conquistadas!`, pageWidth / 2, y + 10, { align: 'center' });
+        doc.text(`Total: ${pluralizar(dados.dominados, 'habilidade conquistada', 'habilidades conquistadas')}!`, pageWidth / 2, y + 10, { align: 'center' });
         y += 22;
     } else {
         doc.text('Estamos começando a jornada! Em breve teremos muitas conquistas.', marginLeft, y);
@@ -1021,7 +1038,7 @@ function gerarResumoFamilia(crianca, sessao) {
     doc.setFont('helvetica', 'normal');
 
     if (dados.emergentes > 0) {
-        doc.text(`Temos ${dados.emergentes} habilidades que estão quase prontas!`, marginLeft, y);
+        doc.text(`Temos ${pluralizar(dados.emergentes, 'habilidade que está quase pronta', 'habilidades que estão quase prontas')}!`, marginLeft, y);
         y += 7;
         doc.text(`${nomeExibido} já demonstra essas capacidades às vezes.`, marginLeft, y);
         y += 12;
@@ -1098,7 +1115,7 @@ function gerarResumoFamilia(crianca, sessao) {
     doc.setTextColor(...CORES.preto);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
-    doc.text(`${nomeExibido} já dominou ${dados.dominados} habilidades!`, pageWidth / 2, y + 22, { align: 'center' });
+    doc.text(`${nomeExibido} já dominou ${pluralizar(dados.dominados, 'habilidade', 'habilidades')}!`, pageWidth / 2, y + 22, { align: 'center' });
     doc.text('Cada pequeno passo é uma grande vitória!', pageWidth / 2, y + 30, { align: 'center' });
 
     // Rodapé

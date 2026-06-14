@@ -1,6 +1,29 @@
 import React, { useEffect, useRef } from 'react';
 import { Chart } from 'chart.js/auto';
 
+// Rótulos amigáveis para a seção de Transição (apenas exibição — não altera valores nem cálculo)
+const NOMES_CATEGORIAS_TRANSICAO = {
+    1: 'Prontidão geral',
+    2: 'Barreiras e comportamento',
+    3: 'Habilidades para ambiente educacional'
+};
+
+const NOMES_ITENS_TRANSICAO = {
+    1: 'Marcos',
+    2: 'Barreiras',
+    3: 'Comportamento/controle instrucional',
+    4: 'Rotina de sala e grupo',
+    5: 'Social e brincar'
+};
+
+// Converte chaves "item_N" em rótulos legíveis ("Item N — Nome" ou "Item N")
+const formatarItemTransicao = (chave) => {
+    const numero = parseInt(String(chave).replace('item_', ''), 10);
+    if (Number.isNaN(numero)) return chave;
+    const nome = NOMES_ITENS_TRANSICAO[numero];
+    return nome ? `Item ${numero} — ${nome}` : `Item ${numero}`;
+};
+
 const PDFReportV3 = ({
     child,
     session,
@@ -681,7 +704,7 @@ const PDFReportV3 = ({
                                         <span style={{ fontWeight: 'bold', color: '#2d3748', fontSize: '14px' }}>
                                             Categoria {cat.numero || (idx + 1)}
                                         </span>
-                                        <span style={{ fontSize: '13px', color: '#4a5568' }}>{cat.nome || 'Categoria de Transição'}</span>
+                                        <span style={{ fontSize: '13px', color: '#4a5568' }}>{cat.nome || NOMES_CATEGORIAS_TRANSICAO[cat.numero || (idx + 1)] || 'Categoria de Transição'}</span>
                                         <span style={{ color: '#047857', fontSize: '16px', fontWeight: 'bold' }}>
                                             Total: {cat.total}
                                         </span>
@@ -696,7 +719,7 @@ const PDFReportV3 = ({
                             <h3 style={{ fontSize: '15px', color: '#2d3748', marginBottom: '12px', fontWeight: 'bold' }}>Itens Automáticos (1-5)</h3>
                             <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', color: '#4a5568', lineHeight: '1.6' }}>
                                 {Object.entries(session.transicao.valoresAutomaticos).filter(([k,v]) => k.startsWith('item_') && parseInt(k.replace('item_', '')) <= 5).map(([k, v]) => (
-                                    <li key={k}><strong>{k}</strong>: {v} pontos</li>
+                                    <li key={k}><strong>{formatarItemTransicao(k)}</strong>: {v} pontos</li>
                                 ))}
                             </ul>
                         </div>
@@ -707,7 +730,7 @@ const PDFReportV3 = ({
                             <h3 style={{ fontSize: '15px', color: '#2d3748', marginBottom: '12px', fontWeight: 'bold' }}>Itens Manuais (6-18)</h3>
                             <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '14px', color: '#4a5568', lineHeight: '1.6' }}>
                                 {Object.entries(session.transicao.avaliacoes).filter(([k,v]) => k.startsWith('item_') && parseInt(k.replace('item_', '')) >= 6).map(([k, v]) => (
-                                    <li key={k}><strong>{k}</strong>: {v.pontuacao !== undefined ? v.pontuacao : v} pontos</li>
+                                    <li key={k}><strong>{formatarItemTransicao(k)}</strong>: {v.pontuacao !== undefined ? v.pontuacao : v} pontos</li>
                                 ))}
                             </ul>
                         </div>
