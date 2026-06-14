@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { STORAGE_KEY } from '../data/constants';
 
 const SessionContext = createContext(null);
@@ -11,8 +11,16 @@ export function SessionProvider({ children }) {
   const [showCadastro, setShowCadastro] = useState(false);
   const [currentInstrument, setCurrentInstrument] = useState(null);
 
+  // Controle de hidratação: só persistimos depois que a carga inicial terminou,
+  // para o efeito de salvar não sobrescrever o localStorage com [] antes da carga.
+  const hasLoadedStorageRef = useRef(false);
+
   // Carregar sessões do localStorage
   useEffect(() => {
+    // StrictMode (dev) monta o efeito duas vezes; hidratar só uma vez evita
+    // reler um storage que o efeito de salvar possa ter tocado nesse meio-tempo.
+    if (hasLoadedStorageRef.current) return;
+
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
@@ -102,10 +110,15 @@ export function SessionProvider({ children }) {
         // localStorage.removeItem(STORAGE_KEY); // Comentado para evitar perda de dados acidental
       }
     }
+
+    // Hidratação inicial concluída — a partir daqui o efeito de salvar pode persistir.
+    hasLoadedStorageRef.current = true;
   }, []);
 
   // Salvar sessões no localStorage
   useEffect(() => {
+    // Enquanto a carga inicial não terminou, não persistir (evita gravar []).
+    if (!hasLoadedStorageRef.current) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
     } catch (error) {
