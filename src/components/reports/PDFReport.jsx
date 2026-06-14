@@ -649,7 +649,7 @@ function gerarPEICompleto(crianca, sessao) {
     y += 10;
 
     if (hasPeiPlan) {
-        const estudoCaso = sessao.pei_plan.estudoCaso || {};
+        const estudoCaso = sessao.pei_plan.studioCaso || sessao.pei_plan.estudoCaso || {};
         const secoes = [
             { titulo: 'Barreiras e Demandas', chave: 'barreiras_demandas' },
             { titulo: 'Contexto Escolar', chave: 'contexto_escolar' },
@@ -777,7 +777,7 @@ function gerarPEICompleto(crianca, sessao) {
     y += 10;
 
     if (hasPeiPlan) {
-        const orientacoes = sessao.pei_plan.adaptationGuidelines?.orientations || {};
+        const orientacoes = sessao.pei_plan.orientations || sessao.pei_plan.adaptationGuidelines?.orientations || {};
         const orientacaoSecoes = [
             { titulo: 'I - Sala de Aula Comum', chave: 'sala_comum' },
             { titulo: 'II - AEE (Atendimento Educacional Especializado)', chave: 'aee' },
