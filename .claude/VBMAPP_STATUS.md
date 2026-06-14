@@ -1,8 +1,8 @@
 ﻿# PsicoTESTE — VB-MAPP Status Técnico
 
-Data: 13/06/2026  
+Data: 14/06/2026  
 Repo: `C:\PsicoTESTE`  
-Status: VB-MAPP alinhado com a planilha XLSX base em 160 marcos.
+Status: VB-MAPP alinhado com a planilha XLSX base em 160 marcos. Smoke test VB-MAPP/PEI executado; bugs reais em PEI, PDF e persistência local corrigidos. Código crítico **tecnicamente estabilizado para novo smoke / homologação manual** (não homologado clinicamente).
 
 ## Fonte de validação
 
@@ -47,6 +47,16 @@ Correções aplicadas:
 - `ebe9272` — `fix: conecta transicao ao PDF VB-MAPP`
 - `3d21fda` — `fix: renderiza ecoico no PDF quando disponivel`
 
+### Smoke test VB-MAPP/PEI e fixes finais (junho/2026)
+
+- `b3c2955` — `fix: corrige validacao final do PEI`
+- `a7f5a3f` — `fix: normaliza sessoes no PDF do relatorio`
+- `5a7d921` — `fix: exibe status do PEI no relatorio`
+- `bbf341c` — `fix: corrige campos salvos no PDF do PEI`
+- `61599e0` — `fix: protege persistencia local apos hidratacao`
+- `e10819e` — `fix: permite excluir objetivos do PEI`
+- `9735674` — `fix: melhora rotulos e plurais dos relatorios`
+
 ## Tags relevantes
 
 - `psicoteste-vbmapp-auditoria-ok`
@@ -87,6 +97,20 @@ Motivo: a aba `AV TAREFAS` não contém seção de tarefas para Vocal. O app usa
 
 Removido o arquivo órfão `src/data/transicao.js` (não importado em `src/`), que duplicava a estrutura da Transição e mantinha `calculateAutoItems` com a lógica antiga (pré-Patch 10C), divergente das faixas oficiais hoje vigentes em `src/hooks/useTransicaoLogic.js`. Sem impacto em runtime; build validado.
 
+## Smoke test VB-MAPP/PEI — bugs reais e fixes finais
+
+O smoke test do fluxo VB-MAPP/PEI revelou **bugs reais** em três frentes — PEI, geração de PDF e persistência local —, todos corrigidos nos commits `b3c2955` … `9735674` (ver "Smoke test VB-MAPP/PEI e fixes finais" na seção de commits). Resumo do que foi encontrado e resolvido:
+
+1. **Validação final do PEI** corrigida (`b3c2955`).
+2. **Persistência localStorage protegida** contra overwrite antes da hidratação — o estado persistido podia ser sobrescrito antes da hidratação completa, com risco de perda de dados (`61599e0`).
+3. **Status do PEI no relatório** — o relatório agora mostra o status do PEI (`5a7d921`).
+4. **PDF branco corrigido** — saída em branco resolvida ao normalizar `allSessions` (`a7f5a3f`).
+5. **PDF do PEI Completo lê dados do wizard** — passou a ler `studioCaso` e `orientations` efetivamente salvos pelo wizard (`bbf341c`).
+6. **Exclusão de objetivos no wizard PEI** agora persiste corretamente (`e10819e`).
+7. **Acabamento visual dos relatórios** — rótulos da seção de Transição humanizados, tipos de métrica do PEI exibidos por extenso e plural automático corrigido (`9735674`). Mudança somente de exibição, sem tocar cálculo, schema, persistência ou lógica clínica.
+
+**Estado atual:** código crítico estabilizado; o build passou em todos os patches; o `git status` estava limpo antes desta documentação.
+
 ## Pendências ainda abertas
 
 1. Validar manualmente o fluxo completo:
@@ -103,10 +127,20 @@ Removido o arquivo órfão `src/data/transicao.js` (não importado em `src/`), q
    - PDF: `PDFReportV3.jsx` já renderiza a seção "Subteste Ecoico" quando `session.ecoico_summary` existir (commit `3d21fda`); sem `ecoico_summary`, nada aparece no PDF;
    - pendente: smoke test manual completo (ver pendência 1); decisão futura sobre reativar ou não o Ecoico no fluxo.
 
+### Pendências futuras não críticas
+
+- Banco real / backend, caso o produto vá além do protótipo local atual.
+- Rascunho do PEI com persistência explícita e feedback ao usuário.
+- Decisão futura sobre reativar ou não o Ecoico.
+- Revisão final de UX e dos textos clínicos.
+- Smoke final de homologação com caso realista.
+
 ## Veredito atual
 
 VB-MAPP está alinhado com a planilha XLSX base em estrutura principal de marcos: 160/160.
 
-Está pronto para teste interno técnico com paciente fictício.
+Após o smoke test VB-MAPP/PEI e os fixes finais (`b3c2955` … `9735674`), o código crítico está **tecnicamente estabilizado** — validação do PEI, persistência local e geração de PDF corrigidas, com build passando em todos os patches.
 
-Ainda não deve ser tratado como homologado para uso clínico real sem validação manual e decisões clínicas pendentes.
+Está pronto para um **novo smoke / homologação manual** com paciente fictício.
+
+**Não está homologado clinicamente.** Não deve ser tratado como homologado para uso clínico real sem o smoke final de homologação com caso realista e as decisões clínicas pendentes acima.

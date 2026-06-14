@@ -1,10 +1,12 @@
 # PsicoTESTE — Status da Transição VB-MAPP
 
-Data: 13/06/2026
+Data: 14/06/2026
 
 ## Estado
 
 Patch 10C e Patch PDF aplicados. Build validado em ambos.
+
+Após o smoke test VB-MAPP/PEI (junho/2026), os rótulos da seção de Transição no PDF receberam acabamento visual (commit `9735674`) — mudança somente de exibição, sem tocar nas faixas, valores ou cálculo. Detalhes na seção "Acabamento visual dos rótulos da Transição".
 
 | Commit | Arquivo | O que fez |
 |--------|---------|-----------|
@@ -75,6 +77,23 @@ O arquivo `src/data/transicao.js` foi **removido** por ser código órfão / mor
 - continha `TRANSICAO_ESTRUTURA` duplicada e a função `calculateAutoItems` com a **lógica antiga** (percentual linear nos marcos, fórmula linear nas barreiras, item 5 com divisor antigo), divergente das faixas oficiais do Patch 10C já vigentes em `useTransicaoLogic.js`.
 
 Risco da remoção: nenhum em runtime — build validado, nenhum import quebrado. A fonte canônica da Transição (estrutura + cálculo por faixas oficiais) permanece em `useTransicaoLogic.js`, intacta.
+
+## Acabamento visual dos rótulos da Transição (commit `9735674`)
+
+Parte do acabamento textual dos relatórios após o smoke test VB-MAPP/PEI. Mudança **somente de exibição** em `PDFReportV3.jsx` — **não** altera cálculo, faixas oficiais, valores, totais nem os filtros de chave (`item_N` continuam usando `startsWith('item_')` e `parseInt`):
+
+- **Categorias** passaram a exibir rótulos amigáveis quando não há nome salvo (`cat.nome` é preservado quando existir):
+  - Categoria 1 — Prontidão geral
+  - Categoria 2 — Barreiras e comportamento
+  - Categoria 3 — Habilidades para ambiente educacional
+- **Itens** deixaram de exibir o prefixo técnico `item_`:
+  - Item 1 — Marcos
+  - Item 2 — Barreiras
+  - Item 3 — Comportamento/controle instrucional
+  - Item 4 — Rotina de sala e grupo
+  - Item 5 — Social e brincar
+  - Itens 6 a 18 — exibidos como "Item N" (número legível, sem `item_`).
+- Build validado após o patch.
 
 ## Pendências abertas
 
