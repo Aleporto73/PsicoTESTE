@@ -592,6 +592,22 @@ export default function SessionController({
                                 <p><strong>Data:</strong> {new Date(selectedSession.date).toLocaleDateString('pt-BR')}</p>
                                 <p><strong>Marcos avaliados:</strong> {Object.keys(selectedSession.scores_snapshot || {}).length}</p>
                                 <p><strong>Lacunas identificadas:</strong> {selectedSession.lacunas?.length || 0}</p>
+                                {(selectedSession.pei_plan || selectedSession.pei_completo) ? (
+                                    <p>
+                                        <strong>PEI:</strong>{' '}
+                                        {(selectedSession.pei_plan?.status === 'active' || selectedSession.pei_completo)
+                                            ? 'Ativo'
+                                            : (selectedSession.pei_plan?.status || 'Gerado')}
+                                        {selectedSession.pei_plan?.activated_at && (
+                                            <span> — ativado em {new Date(selectedSession.pei_plan.activated_at).toLocaleDateString('pt-BR')}</span>
+                                        )}
+                                        {typeof selectedSession.pei_plan?.objectives?.length === 'number' && (
+                                            <span> • {selectedSession.pei_plan.objectives.length} objetivo(s)</span>
+                                        )}
+                                    </p>
+                                ) : (
+                                    <p><strong>PEI:</strong> não gerado</p>
+                                )}
                                 {selectedSession.ecoico_summary && (
                                     <p><strong>Ecoico:</strong> {selectedSession.ecoico_summary.text}</p>
                                 )}
