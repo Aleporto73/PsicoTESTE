@@ -7,26 +7,6 @@ import ObjectivesStep from '../pei/ObjectivesStep';
 import ProgramsStep from '../pei/ProgramsStep';
 import ValidationStep from '../pei/ValidationStep';
 
-/**
- * Merge de arrays por ID — evita duplicação ao regenerar objetivos/procedimentos.
- * Itens novos com mesmo ID sobrescrevem os antigos; itens sem ID são sempre adicionados.
- */
-function mergeUniqueById(oldArr = [], newArr = []) {
-  const map = new Map();
-  [...oldArr, ...newArr].forEach(item => {
-    if (item?.id) {
-      map.set(item.id, item);
-    } else {
-      // Itens sem ID recebem chave única para não duplicar
-      map.set(`_no_id_${Math.random()}`, item);
-    }
-  });
-  return Array.from(map.values());
-}
-
-// Campos do peiPlan que são arrays e devem usar merge por ID
-const ARRAY_FIELDS = ['objectives'];
-
 export default function PEIScreen({
   sessionInfo,
   onFinalize,
@@ -67,19 +47,17 @@ export default function PEIScreen({
   // ═══════════════════════════════════════════════════════════════
 
   /**
-   * Atualiza o plano PEI com merge seguro.
-   * Arrays listados em ARRAY_FIELDS usam mergeUniqueById para evitar duplicação.
+   * Atualiza o plano PEI substituindo, por inteiro, cada campo enviado em `updates`.
+   * Arrays (ex.: `objectives`) NÃO são mais mesclados por ID: o step sempre envia a
+   * lista completa, então adicionar, editar e EXCLUIR objetivo persistem corretamente
+   * (o merge antigo ressuscitava objetivos excluídos ao reuni-los com os anteriores).
    */
   const handleUpdate = useCallback((updates) => {
     setPeiPlan(prev => {
       const merged = { ...prev };
 
       Object.entries(updates).forEach(([key, value]) => {
-        if (ARRAY_FIELDS.includes(key) && Array.isArray(value) && Array.isArray(prev[key])) {
-          merged[key] = mergeUniqueById(prev[key], value);
-        } else {
-          merged[key] = value;
-        }
+        merged[key] = value;
       });
 
       merged.updatedAt = new Date().toISOString();
