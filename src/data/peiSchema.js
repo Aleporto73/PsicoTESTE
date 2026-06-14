@@ -491,9 +491,21 @@ export function validatePlanHealth(peiPlan) {
     completionScore += 25;
 
     // Validar que cada objetivo tem métricas
+    // Os objetivos do wizard usam metricType/baseline/target/successCriteria
+    // (não um array `metrics`); considerar com métrica quando há tipo + alvo
+    // definidos ou quando há critério de sucesso preenchido.
     let objectivesWithMetrics = 0;
     peiPlan.objectives.forEach((objective, idx) => {
-      if (!objective.metrics || objective.metrics.length === 0) {
+      const hasMetric =
+        Boolean(objective.metricType) &&
+        objective.target !== undefined &&
+        objective.target !== null &&
+        objective.target !== '';
+      const hasSuccessCriteria =
+        typeof objective.successCriteria === 'string' &&
+        objective.successCriteria.trim().length > 0;
+
+      if (!hasMetric && !hasSuccessCriteria) {
         warnings.push(
           `Objetivo ${idx + 1} "${objective.description}" não possui métricas de avaliação`
         );
@@ -507,21 +519,30 @@ export function validatePlanHealth(peiPlan) {
     }
   }
 
-  // Validar adaptações
-  const adaptationFields = Object.keys(peiPlan.adaptations || {});
-  let adaptationsComplete = 0;
+  // Validar adaptações e orientações (Decreto 12.773/2025)
+  // A etapa 3 do wizard grava em peiPlan.orientations e peiPlan.selected_procedures,
+  // não em peiPlan.adaptations — por isso medimos pelos dados reais do wizard.
+  const orientationFields = Object.keys(DECREE_ORIENTATIONS);
+  let orientationsComplete = 0;
 
-  adaptationFields.forEach(fieldKey => {
-    const fieldValue = peiPlan.adaptations[fieldKey] || '';
+  orientationFields.forEach(fieldKey => {
+    const fieldValue = peiPlan.orientations?.[fieldKey] || '';
     if (fieldValue && fieldValue.trim().length > 0) {
-      adaptationsComplete += 1;
+      orientationsComplete += 1;
     }
   });
+
+  const proceduresSelected = Array.isArray(peiPlan.selected_procedures)
+    ? peiPlan.selected_procedures.length
+    : 0;
+
+  // "Adaptações" do plano = orientações preenchidas + evidência de programas
+  const adaptationsComplete = orientationsComplete + (proceduresSelected > 0 ? 1 : 0);
 
   if (adaptationsComplete === 0) {
     warnings.push('Nenhuma adaptação foi especificada');
   } else {
-    completionScore += (adaptationsComplete / adaptationFields.length) * 20;
+    completionScore += Math.min(orientationsComplete / orientationFields.length, 1) * 20;
   }
 
   // Validar recursos
@@ -535,17 +556,8 @@ export function validatePlanHealth(peiPlan) {
     completionScore += 10;
   }
 
-  // Validar orientações (Decreto 12.773/2025)
-  const orientationFields = Object.keys(DECREE_ORIENTATIONS);
-  let orientationsComplete = 0;
-
-  orientationFields.forEach(fieldKey => {
-    const fieldValue = peiPlan.orientations?.[fieldKey] || '';
-    if (fieldValue && fieldValue.trim().length > 0) {
-      orientationsComplete += 1;
-    }
-  });
-
+  // Avisar sobre orientações faltantes (Decreto Art. 12 §2)
+  // orientationFields/orientationsComplete já foram calculados acima.
   if (orientationsComplete < orientationFields.length) {
     warnings.push(
       `${orientationFields.length - orientationsComplete} ` +
@@ -561,8 +573,17 @@ export function validatePlanHealth(peiPlan) {
   // Determinar se é válido
   const isValid = errors.length === 0;
 
-  // Pode ativar se válido E tem pelo menos adaptações
-  const canActivate = isValid && adaptationsComplete > 0 && orientationsComplete === orientationFields.length;
+  // Pode ativar se: válido, tem objetivos, há evidência de programas/adaptações
+  // (procedimento selecionado OU >= 2 orientações) e pelo menos 2 orientações preenchidas.
+  const hasObjectives =
+    Array.isArray(peiPlan.objectives) && peiPlan.objectives.length > 0;
+  const hasProgramsOrAdaptations = proceduresSelected > 0 || orientationsComplete >= 2;
+
+  const canActivate =
+    isValid &&
+    hasObjectives &&
+    hasProgramsOrAdaptations &&
+    orientationsComplete >= 2;
 
   return {
     isValid,
