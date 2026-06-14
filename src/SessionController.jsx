@@ -576,7 +576,13 @@ export default function SessionController({
                             domains={data.domains || []}
                             includeGraphs={includeGraphs}
                             includePEI={includePEI}
-                            allSessions={sessions.filter(s => s.child_name === selectedSession.child_name)}
+                            allSessions={sessions
+                                .filter(s => s.child_name === selectedSession.child_name)
+                                .map(s => ({
+                                    ...s,
+                                    scores: s.scores || s.scores_snapshot || {}
+                                }))
+                            }
                         />
                     ) : (
                         <section className="report-section">
